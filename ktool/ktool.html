@@ -3841,6 +3841,7 @@ tbody tr:nth-child(even):hover { background: var(--bg-hover); }
 
 <div class="page-content" id="page-sp-thong-ke">
 <div class="content-wrap">
+  <div id="spDataHub-thong-ke" class="sp-data-hub-slot"></div>
 
   <div class="card">
     <div class="card-title"><span class="icon">📁</span> Tải file đơn hàng Shopee</div>
@@ -3866,6 +3867,7 @@ tbody tr:nth-child(even):hover { background: var(--bg-hover); }
 <!-- ===== PAGE: TÍNH ROI HOÀN HUỶ — SHOPEE ===== -->
 <div class="page-content" id="page-sp-roi-huy">
 <div class="content-wrap">
+  <div id="spDataHub-roi-huy" class="sp-data-hub-slot"></div>
 
   <div class="card">
     <div class="card-title"><span class="icon">📁</span> Tải file đơn hàng — Tính ROI Hoàn Huỷ</div>
@@ -4033,6 +4035,7 @@ tbody tr:nth-child(even):hover { background: var(--bg-hover); }
 <!-- ===== PAGE: KHUNG GIỜ VÀNG — SHOPEE ===== -->
 <div class="page-content" id="page-sp-khung-gio">
 <div class="content-wrap">
+  <div id="spDataHub-khung-gio" class="sp-data-hub-slot"></div>
 
   <div class="card">
     <div class="card-title"><span class="icon">🕐</span> Phân tích Khung Giờ Vàng — Tìm giờ doanh thu cao nhất</div>
@@ -4082,6 +4085,7 @@ tbody tr:nth-child(even):hover { background: var(--bg-hover); }
 
 <div class="page-content" id="page-sp-bao-cao">
 <div class="content-wrap">
+  <div id="spDataHub-bao-cao" class="sp-data-hub-slot"></div>
 
   <div class="card">
     <div class="card-title"><span class="icon">📁</span> Tải file báo cáo thu nhập Shopee</div>
@@ -8657,6 +8661,7 @@ function switchTab(tabId) {
   try { localStorage.setItem(TAB_DANG_XEM, tabId); } catch (e) {}
 
   window.scrollTo(0, 0);
+  if (tabId && tabId.startsWith('sp-')) { onShopeeTabOpened(tabId); }
 }
 
 const TAB_DANG_XEM = 'ktool_tab_dang_xem';
@@ -10853,6 +10858,7 @@ async function processShopeeRevenue() {
     }
 
     spRevenueData = agg;
+    saveSpRevenueDataToDb(agg);
     renderShopeeRevenue(agg);
   } catch (e) {
     console.error(e);
@@ -11215,6 +11221,7 @@ function buildSpCOGSTable(orderRows) {
       `<tr><td class="text-center">${i + 1}</td><td style="max-width:300px;white-space:normal;">${esc(p.name)}</td><td>${esc(p.variation || '--')}</td><td class="text-right">${fmt(p.qty)}</td><td class="text-right"><input type="text" inputmode="numeric" class="sp-cogs-input-variant" data-idx="${i}" value="0" style="width:120px;padding:6px 8px;border:1.5px solid var(--border);border-radius:6px;font-size:0.9em;text-align:right;" oninput="fmtMoneyInput(this);calcSpCOGS('variant')"></td><td class="text-right" id="spCogsVariantTotal-${i}">0đ</td></tr>`
     ).join('');
   }
+  setTimeout(function() { fillSpCogsFromMemory(); }, 50);
 }
 
 function calcSpCOGS(view) {
@@ -11230,6 +11237,8 @@ function calcSpCOGS(view) {
     const qty = products[idx] ? products[idx].qty : 0;
     const rowTotal = price * qty;
     products[idx].price = price;
+    var cogsKey = isName ? products[idx].name : (products[idx].name + '|||' + (products[idx].variation || ''));
+    if (cogsKey && price > 0) { saveSpCogsToDb(cogsKey, price); }
     document.getElementById(totalPrefix + idx).textContent = fmt(rowTotal) + 'đ';
     grandTotal += rowTotal;
   });
@@ -12564,6 +12573,7 @@ document.addEventListener('DOMContentLoaded', async function() {
   try { _ht = localStorage.getItem(HT_KEY); } catch (e) {}
   setHinhThuc(_ht === 'cty' ? 'cty' : 'hkd');   // đã gọi recalc() bên trong
   renderTable();
+  initShopeeDataHub();
 });
 
 
@@ -14869,6 +14879,636 @@ function kgExportWorkbook(d, plat, fileName) {
   XLSX.utils.book_append_sheet(wb, sheetFor(d.normal, 'NGÀY THƯỜNG'), 'Ngày Thường');
   XLSX.writeFile(wb, fileName);
 }
+
+
+
+// ==========================================
+// KTOOL SHOPEE DATA HUB & INDEXEDDB ENGINE
+// ==========================================
+const SP_DB_NAME = 'ktool_shopee_db';
+const SP_DB_VERSION = 1;
+
+let spDbInstance = null;
+window._spActiveMonthFilter = 'all';
+
+function openSpDb() {
+  return new Promise(function(resolve, reject) {
+    if (spDbInstance) return resolve(spDbInstance);
+    var req = indexedDB.open(SP_DB_NAME, SP_DB_VERSION);
+    req.onupgradeneeded = function(e) {
+      var db = e.target.result;
+      if (!db.objectStoreNames.contains('orders')) {
+        var orderStore = db.createObjectStore('orders', { keyPath: 'id' });
+        orderStore.createIndex('m', 'm', { unique: false });
+        orderStore.createIndex('d', 'd', { unique: false });
+      }
+      if (!db.objectStoreNames.contains('cogs')) {
+        db.createObjectStore('cogs', { keyPath: 'k' });
+      }
+      if (!db.objectStoreNames.contains('cache')) {
+        db.createObjectStore('cache', { keyPath: 'k' });
+      }
+    };
+    req.onsuccess = function(e) {
+      spDbInstance = e.target.result;
+      resolve(spDbInstance);
+    };
+    req.onerror = function(e) { reject(e.target.error); };
+  });
+}
+
+// Trích xuất và chuẩn hóa đơn hàng từ mảng dòng Excel Shopee
+function extractShopeeOrdersFromRows(rawRows) {
+  if (!rawRows || !rawRows.length) return [];
+  var keys = Object.keys(rawRows[0] || {});
+  var fk = function(s) {
+    return keys.find(function(k) { return k && k.normalize('NFC').indexOf(s.normalize('NFC')) >= 0; }) || '';
+  };
+
+  var C = {
+    id: fk('Mã đơn hàng'),
+    status: fk('Trạng Thái Đơn Hàng') || fk('Trạng thái đơn hàng') || fk('Trạng Thái'),
+    date: fk('Ngày đặt hàng'),
+    amount: fk('Tổng giá trị đơn hàng'),
+    product: fk('Tên sản phẩm'),
+    variant: fk('Tên phân loại hàng') || fk('Phân loại'),
+    qty: fk('Số lượng'),
+    cancelReason: fk('Lý do hủy'),
+    returnStatus: fk('Trả hàng/Hoàn tiền') || fk('Trạng thái Trả hàng'),
+    returnQty: fk('Số lượng sản phẩm được hoàn trả'),
+    ship: fk('Đơn Vị Vận Chuyển'),
+    shopeeVc: fk('Mã giảm giá của Shopee'),
+    shopVc: fk('Mã giảm giá của Shop'),
+    sellerTotal: fk('Tổng số tiền được người bán trợ giá'),
+    shipBuyer: fk('Phí vận chuyển mà người mua trả'),
+    shipSubsidy: fk('Phí vận chuyển tài trợ bởi Shopee')
+  };
+
+  if (!C.id) throw new Error('File không có cột "Mã đơn hàng"!');
+
+  var map = {};
+  for (var i = 0; i < rawRows.length; i++) {
+    var row = rawRows[i];
+    var oid = String(row[C.id] == null ? '' : row[C.id]).trim();
+    if (!oid) continue;
+
+    if (!map[oid]) {
+      var dateVal = String(row[C.date] == null ? '' : row[C.date]).trim();
+      var monthKey = '';
+      if (dateVal) {
+        var mMatch = dateVal.match(/(\d{4})[-/](\d{1,2})/) || dateVal.match(/(\d{1,2})[-/](\d{4})/);
+        if (mMatch) {
+          if (mMatch[1].length === 4) monthKey = mMatch[1] + '-' + (mMatch[2].length === 1 ? '0' + mMatch[2] : mMatch[2]);
+          else monthKey = mMatch[2] + '-' + (mMatch[1].length === 1 ? '0' + mMatch[1] : mMatch[1]);
+        }
+      }
+
+      map[oid] = {
+        id: oid,
+        d: dateVal,
+        m: monthKey,
+        st: String(row[C.status] || '').trim(),
+        rs: String(row[C.cancelReason] || '').trim(),
+        retSt: String(row[C.returnStatus] || '').trim(),
+        retQ: spNum(row[C.returnQty]),
+        ship: String(row[C.ship] || '').trim(),
+        gmv: spNum(row[C.amount]),
+        sv: Math.abs(spNum(row[C.shopeeVc])),
+        shopVc: Math.abs(spNum(row[C.shopVc])),
+        sellerT: Math.abs(spNum(row[C.sellerTotal])),
+        shipB: Math.abs(spNum(row[C.shipBuyer])),
+        shipS: Math.abs(spNum(row[C.shipSubsidy])),
+        items: []
+      };
+    }
+
+    var o = map[oid];
+    if (!o.st && row[C.status]) o.st = String(row[C.status]).trim();
+    if (!o.rs && row[C.cancelReason]) o.rs = String(row[C.cancelReason]).trim();
+    if (!o.retSt && row[C.returnStatus]) o.retSt = String(row[C.returnStatus]).trim();
+    if (!o.ship && row[C.ship]) o.ship = String(row[C.ship]).trim();
+    var amt = spNum(row[C.amount]);
+    if (amt > o.gmv) o.gmv = amt;
+    var sv = Math.abs(spNum(row[C.shopeeVc]));
+    if (sv > o.sv) o.sv = sv;
+    var shopVc = Math.abs(spNum(row[C.shopVc]));
+    if (shopVc > o.shopVc) o.shopVc = shopVc;
+    o.sellerT += Math.abs(spNum(row[C.sellerTotal]));
+
+    var pName = String(row[C.product] || '').trim();
+    var vName = String(row[C.variant] || '').trim();
+    var qty = parseInt(row[C.qty]) || 1;
+    if (pName) {
+      o.items.push({ p: pName, v: vName, q: qty });
+    }
+  }
+
+  return Object.keys(map).map(function(k) { return map[k]; });
+}
+
+// Chuyển mảng đơn hàng từ IndexedDB thành dạng phẳng tương thích 100% với các hàm cũ
+function convertOrdersToFlatRows(orders) {
+  var flat = [];
+  for (var i = 0; i < orders.length; i++) {
+    var o = orders[i];
+    if (!o.items || o.items.length === 0) {
+      flat.push({
+        'Mã đơn hàng': o.id,
+        'Trạng Thái Đơn Hàng': o.st,
+        'Ngày đặt hàng': o.d,
+        'Tổng giá trị đơn hàng': o.gmv,
+        'Tên sản phẩm': '',
+        'Tên phân loại hàng': '',
+        'Số lượng': 1,
+        'Lý do hủy': o.rs,
+        'Trả hàng/Hoàn tiền': o.retSt,
+        'Số lượng sản phẩm được hoàn trả': o.retQ,
+        'Đơn Vị Vận Chuyển': o.ship,
+        'Mã giảm giá của Shopee': o.sv,
+        'Mã giảm giá của Shop': o.shopVc,
+        'Tổng số tiền được người bán trợ giá': o.sellerT,
+        'Phí vận chuyển mà người mua trả': o.shipB,
+        'Phí vận chuyển tài trợ bởi Shopee': o.shipS
+      });
+    } else {
+      for (var j = 0; j < o.items.length; j++) {
+        var it = o.items[j];
+        flat.push({
+          'Mã đơn hàng': o.id,
+          'Trạng Thái Đơn Hàng': o.st,
+          'Ngày đặt hàng': o.d,
+          'Tổng giá trị đơn hàng': o.gmv,
+          'Tên sản phẩm': it.p,
+          'Tên phân loại hàng': it.v,
+          'Số lượng': it.q,
+          'Lý do hủy': o.rs,
+          'Trả hàng/Hoàn tiền': o.retSt,
+          'Số lượng sản phẩm được hoàn trả': j === 0 ? o.retQ : 0,
+          'Đơn Vị Vận Chuyển': o.ship,
+          'Mã giảm giá của Shopee': o.sv,
+          'Mã giảm giá của Shop': o.shopVc,
+          'Tổng số tiền được người bán trợ giá': j === 0 ? o.sellerT : 0,
+          'Phí vận chuyển mà người mua trả': j === 0 ? o.shipB : 0,
+          'Phí vận chuyển tài trợ bởi Shopee': j === 0 ? o.shipS : 0
+        });
+      }
+    }
+  }
+  return flat;
+}
+
+// Lưu danh sách đơn vào IndexedDB (Upsert theo Mã đơn hàng)
+async function saveShopeeOrdersToDb(orderList, isAppend) {
+  var db = await openSpDb();
+  return new Promise(function(resolve, reject) {
+    var tx = db.transaction(['orders'], 'readwrite');
+    var store = tx.objectStore('orders');
+
+    if (!isAppend) {
+      store.clear();
+    }
+
+    var newCount = 0;
+    var updateCount = 0;
+
+    var getAllReq = store.getAllKeys();
+    getAllReq.onsuccess = function() {
+      var existingKeys = new Set(getAllReq.result || []);
+      for (var i = 0; i < orderList.length; i++) {
+        var ord = orderList[i];
+        if (existingKeys.has(ord.id)) {
+          updateCount++;
+        } else {
+          newCount++;
+        }
+        store.put(ord);
+      }
+    };
+
+    tx.oncomplete = function() {
+      resolve({ newCount: newCount, updateCount: updateCount, totalSaved: orderList.length });
+    };
+    tx.onerror = function(e) { reject(e.target.error); };
+  });
+}
+
+// Lấy danh sách đơn hàng từ IndexedDB (có thể lọc theo tháng)
+async function getAllShopeeOrdersFromDb(monthFilter) {
+  var db = await openSpDb();
+  return new Promise(function(resolve, reject) {
+    var tx = db.transaction(['orders'], 'readonly');
+    var store = tx.objectStore('orders');
+    var req;
+    if (monthFilter && monthFilter !== 'all') {
+      var index = store.index('m');
+      req = index.getAll(monthFilter);
+    } else {
+      req = store.getAll();
+    }
+    req.onsuccess = function() { resolve(req.result || []); };
+    req.onerror = function(e) { reject(e.target.error); };
+  });
+}
+
+// Thống kê nhanh kho đơn hàng
+async function getShopeeDbSummary() {
+  var orders = await getAllShopeeOrdersFromDb('all');
+  var totalOrders = orders.length;
+  var totalSkuCount = 0;
+  var monthsSet = new Set();
+  var minDate = '';
+  var maxDate = '';
+
+  for (var i = 0; i < orders.length; i++) {
+    var o = orders[i];
+    totalSkuCount += (o.items && o.items.length) ? o.items.length : 1;
+    if (o.m) monthsSet.add(o.m);
+    if (o.d) {
+      if (!minDate || o.d < minDate) minDate = o.d;
+      if (!maxDate || o.d > maxDate) maxDate = o.d;
+    }
+  }
+
+  var sortedMonths = Array.from(monthsSet).sort().reverse();
+  return {
+    totalOrders: totalOrders,
+    totalSkuCount: totalSkuCount,
+    months: sortedMonths,
+    minDate: minDate ? minDate.slice(0, 10) : '',
+    maxDate: maxDate ? maxDate.slice(0, 10) : ''
+  };
+}
+
+// Xóa sạch kho đơn
+async function clearAllShopeeOrdersInDb() {
+  var db = await openSpDb();
+  return new Promise(function(resolve, reject) {
+    var tx = db.transaction(['orders'], 'readwrite');
+    var store = tx.objectStore('orders');
+    var req = store.clear();
+    req.onsuccess = function() { resolve(); };
+    req.onerror = function(e) { reject(e.target.error); };
+  });
+}
+
+// COGS Memory: Quản lý giá vốn
+async function saveSpCogsToDb(key, price) {
+  var db = await openSpDb();
+  return new Promise(function(resolve, reject) {
+    var tx = db.transaction(['cogs'], 'readwrite');
+    var store = tx.objectStore('cogs');
+    store.put({ k: key, price: parseFloat(price) || 0, updatedAt: Date.now() });
+    tx.oncomplete = function() { resolve(); };
+    tx.onerror = function(e) { reject(e.target.error); };
+  });
+}
+
+async function getAllSpCogsFromDb() {
+  var db = await openSpDb();
+  return new Promise(function(resolve, reject) {
+    var tx = db.transaction(['cogs'], 'readonly');
+    var store = tx.objectStore('cogs');
+    var req = store.getAll();
+    req.onsuccess = function() {
+      var map = {};
+      (req.result || []).forEach(function(it) { map[it.k] = it.price; });
+      resolve(map);
+    };
+    req.onerror = function(e) { reject(e.target.error); };
+  });
+}
+
+// Cache Báo cáo thu nhập PDF
+async function saveSpRevenueDataToDb(revData) {
+  var db = await openSpDb();
+  return new Promise(function(resolve, reject) {
+    var tx = db.transaction(['cache'], 'readwrite');
+    var store = tx.objectStore('cache');
+    store.put({ k: 'sp_revenue_data', val: revData, updatedAt: Date.now() });
+    tx.oncomplete = function() { resolve(); };
+    tx.onerror = function(e) { reject(e.target.error); };
+  });
+}
+
+async function getSpRevenueDataFromDb() {
+  var db = await openSpDb();
+  return new Promise(function(resolve, reject) {
+    var tx = db.transaction(['cache'], 'readonly');
+    var store = tx.objectStore('cache');
+    var req = store.get('sp_revenue_data');
+    req.onsuccess = function() { resolve(req.result ? req.result.val : null); };
+    req.onerror = function(e) { reject(e.target.error); };
+  });
+}
+
+// ==========================================
+// RENDER GIAO DIỆN DATA HUB TRÊN CÁC TAB
+// ==========================================
+async function renderAllShopeeDataHubs() {
+  var summary = await getShopeeDbSummary();
+  var slots = ['thong-ke', 'roi-huy', 'khung-gio', 'bao-cao'];
+
+  var activeFilter = window._spActiveMonthFilter || 'all';
+
+  for (var i = 0; i < slots.length; i++) {
+    var slotId = 'spDataHub-' + slots[i];
+    var container = document.getElementById(slotId);
+    if (!container) continue;
+
+    if (summary.totalOrders === 0) {
+      // Kho trống
+      container.innerHTML =
+        '<div class="card" style="border:2px dashed #3b82f6;background:linear-gradient(135deg,#eff6ff,#f8fafc);border-radius:14px;padding:22px;text-align:center;margin-bottom:18px;">' +
+          '<div style="font-size:2.4em;margin-bottom:8px;">📦</div>' +
+          '<div style="font-size:1.15em;font-weight:700;color:#1e40af;margin-bottom:6px;">Kho Dữ Liệu Đơn Hàng Shopee (Dùng chung cho 4 tính năng)</div>' +
+          '<div style="font-size:0.88em;color:#475569;max-width:680px;margin:0 auto 16px;line-height:1.6;">' +
+            'Chỉ cần upload <b>1 lần duy nhất</b> file <i>"Tất cả đơn hàng" (.xlsx)</i>. Dữ liệu được lưu trữ an toàn ngay trên trình duyệt (không mất khi F5, không giới hạn dung lượng) và tự động đồng bộ xuyên suốt cả 4 tính năng: <b>Thống Kê Đơn</b>, <b>ROI Hoàn Huỷ</b>, <b>Khung Giờ Vàng</b> và <b>Báo Cáo Doanh Thu</b>.' +
+          '</div>' +
+          '<div style="display:inline-flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:center;">' +
+            '<label class="btn btn-primary" style="margin:0;cursor:pointer;padding:11px 24px;font-size:0.95em;box-shadow:0 4px 12px rgba(37,99,235,0.25);">' +
+              '📁 Chọn file đơn hàng Shopee (.xlsx)' +
+              '<input type="file" accept=".xlsx,.xls,.csv" multiple style="display:none;" onchange="handleShopeeHubUpload(this, false)">' +
+            '</label>' +
+          '</div>' +
+          '<div style="font-size:0.78em;color:#94a3b8;margin-top:10px;">💡 Hỗ trợ chọn cùng lúc nhiều file (Part 1, Part 2...). Hệ thống tự động gộp và lọc trùng theo Mã đơn hàng.</div>' +
+        '</div>';
+    } else {
+      // Kho đã có dữ liệu
+      var monthOptionsHtml = summary.months.map(function(m) {
+        return '<option value="' + m + '" ' + (activeFilter === m ? 'selected' : '') + '>Tháng ' + m + '</option>';
+      }).join('');
+
+      var dateRangeText = (summary.minDate && summary.maxDate)
+        ? 'Từ ' + summary.minDate + ' đến ' + summary.maxDate
+        : '';
+
+      container.innerHTML =
+        '<div class="card" style="border:1.5px solid #86efac;background:linear-gradient(135deg,#f0fdf4 0%,#ffffff 100%);border-radius:14px;padding:16px 20px;box-shadow:0 2px 10px rgba(22,163,74,0.06);margin-bottom:18px;">' +
+          '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">' +
+            '<div style="display:flex;align-items:center;gap:14px;">' +
+              '<div style="width:44px;height:44px;background:#dcfce7;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.5em;border:1px solid #bbf7d0;">📊</div>' +
+              '<div>' +
+                '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">' +
+                  '<span style="font-weight:800;color:#15803d;font-size:1.05em;">KHO DỮ LIỆU SHOPEE</span>' +
+                  '<span style="background:#22c55e;color:#fff;font-size:0.75em;font-weight:700;padding:2px 8px;border-radius:12px;">ĐÃ NẠP SẴN</span>' +
+                  '<span style="background:#e0f2fe;color:#0369a1;font-size:0.75em;font-weight:600;padding:2px 8px;border-radius:12px;">IndexedDB</span>' +
+                '</div>' +
+                '<div style="font-size:0.85em;color:#334155;margin-top:3px;">' +
+                  'Đang lưu: <b style="color:#16a34a;">' + fmt(summary.totalOrders) + ' đơn hàng</b> (' + fmt(summary.totalSkuCount) + ' dòng SKU)' +
+                  (dateRangeText ? ' &bull; <span style="color:#64748b;">' + dateRangeText + '</span>' : '') +
+                '</div>' +
+              '</div>' +
+            '</div>' +
+
+            '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">' +
+              '<div style="display:flex;align-items:center;gap:6px;background:#fff;padding:5px 10px;border-radius:8px;border:1.5px solid #cbd5e1;">' +
+                '<span style="font-size:0.82em;font-weight:600;color:#475569;">Kỳ xem:</span>' +
+                '<select onchange="changeShopeeHubMonthFilter(this.value)" style="border:none;background:transparent;font-weight:700;color:#1e293b;font-size:0.85em;outline:none;cursor:pointer;">' +
+                  '<option value="all" ' + (activeFilter === 'all' ? 'selected' : '') + '>Toàn bộ (' + fmt(summary.totalOrders) + ' đơn)</option>' +
+                  monthOptionsHtml +
+                '</select>' +
+              '</div>' +
+
+              '<label class="btn btn-sm btn-primary" style="margin:0;cursor:pointer;display:inline-flex;align-items:center;gap:4px;font-size:0.82em;padding:8px 14px;" title="Nạp thêm đơn tuần mới, tự động cập nhật đơn cũ">' +
+                '➕ Nạp thêm file' +
+                '<input type="file" accept=".xlsx,.xls,.csv" multiple style="display:none;" onchange="handleShopeeHubUpload(this, true)">' +
+              '</label>' +
+
+              '<label class="btn btn-sm btn-secondary" style="margin:0;cursor:pointer;display:inline-flex;align-items:center;gap:4px;font-size:0.82em;padding:8px 14px;" title="Xóa dữ liệu cũ và nạp file mới hoàn toàn">' +
+                '🔄 Thay mới' +
+                '<input type="file" accept=".xlsx,.xls,.csv" multiple style="display:none;" onchange="handleShopeeHubUpload(this, false)">' +
+              '</label>' +
+
+              '<button class="btn btn-sm btn-danger" style="margin:0;padding:8px 12px;font-size:0.82em;" onclick="confirmClearShopeeDb()" title="Xóa toàn bộ đơn trong kho">' +
+                '🗑️ Xóa kho' +
+              '</button>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+    }
+  }
+}
+
+// Xử lý upload file vào Shopee Data Hub
+async function handleShopeeHubUpload(input, isAppend) {
+  var files = input && input.files ? Array.from(input.files) : [];
+  if (!files.length) return;
+
+  showLoading('📦 Đang nạp dữ liệu Shopee...', 'Đang đọc ' + files.length + ' file, vui lòng chờ');
+  await new Promise(function(r) { setTimeout(r, 100); });
+
+  try {
+    var allRows = [];
+    for (var i = 0; i < files.length; i++) {
+      var file = files[i];
+      try {
+        var res = await parseXlsx(file);
+        if (res.rows && res.rows.length) {
+          allRows = allRows.concat(res.rows);
+        }
+      } catch (fileErr) {
+        console.error('Lỗi đọc file', file.name, fileErr);
+      }
+    }
+
+    if (!allRows.length) {
+      hideLoading();
+      alert('Không đọc được dữ liệu nào từ file!');
+      input.value = '';
+      return;
+    }
+
+    // Chuẩn hóa & gom nhóm theo Mã đơn hàng
+    var orders = extractShopeeOrdersFromRows(allRows);
+    if (!orders.length) {
+      hideLoading();
+      alert('Không tìm thấy đơn hàng hợp lệ!');
+      input.value = '';
+      return;
+    }
+
+    // Lưu vào IndexedDB
+    var saveResult = await saveShopeeOrdersToDb(orders, isAppend);
+
+    // Cập nhật lại giao diện Hub
+    await renderAllShopeeDataHubs();
+
+    // Làm mới tab đang mở
+    await refreshCurrentShopeeTab();
+
+    hideLoading();
+    input.value = '';
+
+    var msg = isAppend
+      ? '✅ Đã nạp thành công! Thêm mới: ' + fmt(saveResult.newCount) + ' đơn, cập nhật: ' + fmt(saveResult.updateCount) + ' đơn cũ.'
+      : '✅ Đã khởi tạo kho thành công với ' + fmt(saveResult.totalSaved) + ' đơn hàng!';
+    alert(msg);
+  } catch (err) {
+    hideLoading();
+    input.value = '';
+    console.error('Lỗi nạp kho Shopee:', err);
+    alert('Lỗi: ' + err.message);
+  }
+}
+
+// Thay đổi bộ lọc tháng
+async function changeShopeeHubMonthFilter(newMonth) {
+  window._spActiveMonthFilter = newMonth;
+  await renderAllShopeeDataHubs();
+  await refreshCurrentShopeeTab();
+}
+
+// Xóa kho dữ liệu
+async function confirmClearShopeeDb() {
+  if (!confirm('Bạn có chắc chắn muốn xóa toàn bộ dữ liệu đơn hàng Shopee trong kho? Thao tác này không thể hoàn tác.')) {
+    return;
+  }
+  showLoading('🗑️ Đang xóa kho dữ liệu...', 'Vui lòng chờ');
+  await clearAllShopeeOrdersInDb();
+  await renderAllShopeeDataHubs();
+
+  // Reset các dashboard
+  if (document.getElementById('spStatsDashboard')) {
+    document.getElementById('spStatsDashboard').style.display = 'none';
+    document.getElementById('spStatsDashboard').innerHTML = '';
+  }
+  if (document.getElementById('spRoiHuyDashboard')) {
+    document.getElementById('spRoiHuyDashboard').style.display = 'none';
+  }
+  if (document.getElementById('spKhungGioDashboard')) {
+    document.getElementById('spKhungGioDashboard').style.display = 'none';
+  }
+
+  hideLoading();
+  alert('Đã xóa sạch kho dữ liệu Shopee!');
+}
+
+// Tự động làm mới tab Shopee đang xem
+async function refreshCurrentShopeeTab() {
+  var activeTabEl = document.querySelector('.nav-tab.active');
+  var activeTabId = activeTabEl ? activeTabEl.id.replace('tab-', '') : '';
+  if (activeTabId) {
+    await onShopeeTabOpened(activeTabId);
+  }
+}
+
+// Khi mở bất kỳ tab Shopee nào: tự động nạp dữ liệu và vẽ kết quả
+async function onShopeeTabOpened(tabId) {
+  if (!tabId || !tabId.startsWith('sp-')) return;
+  var filter = window._spActiveMonthFilter || 'all';
+  var orders = await getAllShopeeOrdersFromDb(filter);
+
+  // Cập nhật thanh hub
+  renderAllShopeeDataHubs();
+
+  if (!orders || !orders.length) return;
+  var flatRows = convertOrdersToFlatRows(orders);
+
+  if (tabId === 'sp-thong-ke') {
+    // Ẩn bớt card upload thủ công nếu đã có dữ liệu trong hub
+    var oldCard = document.querySelector('#page-sp-thong-ke .card:not(#spStatsDashboard)');
+    if (oldCard) oldCard.style.display = 'none';
+    renderShopeeStats(flatRows);
+  } else if (tabId === 'sp-roi-huy') {
+    var cpqcInp = document.getElementById('spInputCPQC');
+    var cpqcVal = cpqcInp ? parseFloat(String(cpqcInp.value).replace(',', '.')) : 10;
+    if (!cpqcVal || cpqcVal <= 0) cpqcVal = 10;
+    // Ẩn bớt ô input file cũ trong card roi-huy, chỉ giữ lại ô % CPQC
+    var fileGroup = document.querySelector('#page-sp-roi-huy #spFileRoiHuy');
+    if (fileGroup && fileGroup.closest('.form-group')) {
+      fileGroup.closest('.form-group').style.display = 'none';
+    }
+    renderSpRoiHuy(flatRows, cpqcVal);
+  } else if (tabId === 'sp-khung-gio') {
+    // Ẩn bớt 3 ô upload tháng cũ vì Data Hub đã quản lý
+    var kgUploadGrid = document.querySelector('#page-sp-khung-gio .card div[style*="grid-template-columns:1fr 1fr 1fr"]');
+    if (kgUploadGrid) kgUploadGrid.style.display = 'none';
+    var kgActions = document.querySelector('#page-sp-khung-gio .actions');
+    if (kgActions) kgActions.style.display = 'none';
+    renderSpKhungGio(flatRows);
+  } else if (tabId === 'sp-bao-cao') {
+    // Cập nhật bảng giá vốn & voucher từ kho đơn
+    buildSpCOGSTable(flatRows);
+    // Điền lại giá vốn từ cogs_memory
+    fillSpCogsFromMemory();
+
+    // Nếu đã có cache PDF doanh thu, tự động render lại
+    var cachedRev = await getSpRevenueDataFromDb();
+    if (cachedRev && !spRevenueData) {
+      spRevenueData = cachedRev;
+      renderShopeeRevenue(cachedRev);
+    }
+  }
+}
+
+// Điền lại giá vốn đã lưu vào các ô input
+async function fillSpCogsFromMemory() {
+  var cogsMap = await getAllSpCogsFromDb();
+  if (!cogsMap || !Object.keys(cogsMap).length) return;
+
+  var nameInputs = document.querySelectorAll('.sp-cogs-input-name');
+  nameInputs.forEach(function(inp) {
+    var idx = parseInt(inp.dataset.idx);
+    var p = spCogsProductsByName[idx];
+    if (p && cogsMap[p.name] != null) {
+      inp.value = fmt(cogsMap[p.name]);
+    }
+  });
+
+  var variantInputs = document.querySelectorAll('.sp-cogs-input-variant');
+  variantInputs.forEach(function(inp) {
+    var idx = parseInt(inp.dataset.idx);
+    var p = spCogsProductsByVariant[idx];
+    if (p) {
+      var vKey = p.name + '|||' + p.variation;
+      if (cogsMap[vKey] != null) {
+        inp.value = fmt(cogsMap[vKey]);
+      } else if (cogsMap[p.name] != null) {
+        inp.value = fmt(cogsMap[p.name]);
+      }
+    }
+  });
+
+  // Tính lại tổng giá vốn
+  calcSpCOGS('name');
+}
+
+// Lắng nghe sự kiện thay đổi % CPQC để tính ROI realtime
+function onSpCpqcInputChanged() {
+  var inp = document.getElementById('spInputCPQC');
+  var cpqc = inp ? parseFloat(String(inp.value).replace(',', '.')) : 10;
+  if (!cpqc || cpqc <= 0) return;
+  getAllShopeeOrdersFromDb(window._spActiveMonthFilter || 'all').then(function(orders) {
+    if (orders && orders.length) {
+      renderSpRoiHuy(convertOrdersToFlatRows(orders), cpqc);
+    }
+  });
+}
+
+// Khởi tạo Shopee Data Hub khi load trang
+async function initShopeeDataHub() {
+  try {
+    await openSpDb();
+    await renderAllShopeeDataHubs();
+
+    // Gắn realtime cho ô % CPQC
+    var cpqcInp = document.getElementById('spInputCPQC');
+    if (cpqcInp && !cpqcInp.dataset.hasListener) {
+      cpqcInp.dataset.hasListener = '1';
+      cpqcInp.addEventListener('input', onSpCpqcInputChanged);
+    }
+
+    // Nếu đang ở sẵn tab Shopee (do nhớ tab cũ), kích hoạt nạp dữ liệu
+    var currentTab = localStorage.getItem('ktool_tab_dang_xem');
+    if (currentTab && currentTab.startsWith('sp-')) {
+      onShopeeTabOpened(currentTab);
+    }
+  } catch (e) {
+    console.error('Lỗi khởi tạo Shopee Data Hub:', e);
+  }
+}
+
+
 </script>
 <!-- Loading Overlay -->
 <div class="loading-overlay" id="loadingOverlay">
