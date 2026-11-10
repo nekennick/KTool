@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Đăng nhập | KTool</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co; img-src 'self' data:;">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Be Vietnam Pro', sans-serif;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f172a 100%);
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+.card {
+  background: #fff; border-radius: 20px; padding: 40px;
+  width: 100%; max-width: 440px;
+  box-shadow: 0 25px 60px rgba(0,0,0,0.35);
+}
+.logo { text-align: center; margin-bottom: 28px; }
+.logo-text {
+  font-size: 22px; font-weight: 800;
+  background: linear-gradient(135deg, #2563eb, #7c3aed);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.logo-sub { font-size: 13px; color: #64748b; margin-top: 3px; }
+
+.tabs { display: flex; background: #f1f5f9; border-radius: 12px; padding: 4px; margin-bottom: 28px; }
+.tab {
+  flex: 1; padding: 10px; text-align: center; border-radius: 9px;
+  font-size: 14px; font-weight: 600; cursor: pointer; color: #64748b; transition: all .2s;
+}
+.tab.active { background: #fff; color: #2563eb; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+
+.form-group { margin-bottom: 16px; }
+label { display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 6px; }
+input {
+  width: 100%; padding: 12px 14px; border: 1.5px solid #e2e8f0;
+  border-radius: 10px; font-size: 14px; color: #1e293b;
+  font-family: inherit; transition: border .2s; background: #f8fafc;
+}
+input:focus { outline: none; border-color: #2563eb; background: #fff; }
+
+.btn {
+  width: 100%; padding: 13px; border-radius: 10px; font-size: 15px;
+  font-weight: 700; cursor: pointer; border: none; transition: all .2s;
+  font-family: inherit;
+}
+.btn-primary { background: linear-gradient(135deg, #2563eb, #7c3aed); color: #fff; }
+.btn-primary:hover { opacity: .9; transform: translateY(-1px); }
+.btn-primary:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+
+.divider { display: flex; align-items: center; gap: 12px; margin: 20px 0; color: #94a3b8; font-size: 13px; }
+.divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: #e2e8f0; }
+
+.btn-google {
+  background: #fff; color: #374151; border: 1.5px solid #e2e8f0;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+}
+.btn-google:hover { background: #f8fafc; border-color: #94a3b8; }
+.btn-google svg { width: 20px; height: 20px; flex-shrink: 0; }
+
+.alert { padding: 12px 14px; border-radius: 10px; font-size: 13px; margin-bottom: 16px; display: none; }
+.alert-error { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+.alert-success { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
+
+/* Verify screen */
+.verify-screen {
+  display: none; text-align: center; padding: 10px 0;
+}
+.verify-icon { font-size: 52px; margin-bottom: 12px; }
+.verify-title { font-size: 18px; font-weight: 700; color: #1e293b; margin-bottom: 8px; }
+.verify-desc { font-size: 14px; color: #64748b; line-height: 1.7; margin-bottom: 20px; }
+.verify-email-box {
+  background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px;
+  padding: 10px 14px; font-size: 13px; color: #1d4ed8; font-weight: 600;
+  margin-bottom: 20px; word-break: break-all;
+}
+.resend-link { font-size: 13px; color: #64748b; margin-top: 12px; text-align: center; }
+.resend-link a { color: #2563eb; cursor: pointer; font-weight: 600; }
+
+/* Pending screen */
+.pending-screen { display: none; text-align: center; padding: 10px 0; }
+.pending-icon { font-size: 52px; margin-bottom: 12px; }
+.pending-title { font-size: 18px; font-weight: 700; color: #1e293b; margin-bottom: 8px; }
+.pending-desc { font-size: 14px; color: #64748b; line-height: 1.7; margin-bottom: 20px; }
+
+.footer-note { text-align: center; font-size: 12px; color: #94a3b8; margin-top: 20px; }
+
+#loading-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(15,23,42,.6); backdrop-filter: blur(4px);
+  align-items: center; justify-content: center; z-index: 999;
+}
+#loading-overlay.show { display: flex; }
+.spinner {
+  width: 44px; height: 44px; border: 4px solid rgba(255,255,255,.3);
+  border-top-color: #fff; border-radius: 50%; animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div id="loading-overlay"><div class="spinner"></div></div>
+
+<div class="card">
+  <div class="logo">
+    <div class="logo-text">⚡ KTool</div>
+    <div class="logo-sub">Công cụ tính chi phí TMDT chuyên nghiệp</div>
+  </div>
+
+  <div class="alert alert-error" id="alert-error"></div>
+  <div class="alert alert-success" id="alert-success"></div>
+
+  <!-- Tabs -->
+  <div class="tabs" id="tabs">
+    <div class="tab active" onclick="switchTab('login')">Đăng nhập</div>
+    <div class="tab" onclick="switchTab('register')">Đăng ký</div>
+  </div>
+
+  <!-- LOGIN -->
+  <div id="login-form">
+    <button class="btn btn-google" onclick="doGoogleLogin()">
+      <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+      Tiếp tục với Google
+      <span style="background:#dcfce7;color:#15803d;font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:20px">Khuyên dùng</span>
+    </button>
+    <div class="divider">hoặc dùng email</div>
+    <div class="form-group">
+      <label>Email</label>
+      <input type="email" id="login-email" placeholder="email@example.com" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div class="form-group">
+      <label>Mật khẩu</label>
+      <input type="password" id="login-password" placeholder="Nhập mật khẩu" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div style="text-align:right;margin:-8px 0 14px">
+      <a onclick="showForgot()" style="font-size:13px;color:#2563eb;font-weight:600;cursor:pointer">Quên mật khẩu?</a>
+    </div>
+    <button class="btn btn-primary" id="btn-login" onclick="doLogin()">Đăng nhập</button>
+  </div>
+
+  <!-- REGISTER -->
+  <div id="register-form" style="display:none">
+    <button class="btn btn-google" onclick="doGoogleLogin()">
+      <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+      Đăng ký với Google
+      <span style="background:#dcfce7;color:#15803d;font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:20px">Khuyên dùng</span>
+    </button>
+    <div class="divider">hoặc dùng email</div>
+    <div class="form-group">
+      <label>Họ và tên</label>
+      <input type="text" id="reg-name" placeholder="Nguyễn Văn A">
+    </div>
+    <div class="form-group">
+      <label>Email</label>
+      <input type="email" id="reg-email" placeholder="email@example.com">
+    </div>
+    <div class="form-group">
+      <label>Mật khẩu</label>
+      <input type="password" id="reg-password" placeholder="Tối thiểu 6 ký tự">
+    </div>
+    <div class="form-group">
+      <label>Xác nhận mật khẩu</label>
+      <input type="password" id="reg-password2" placeholder="Nhập lại mật khẩu" onkeydown="if(event.key==='Enter')doRegister()">
+    </div>
+    <button class="btn btn-primary" onclick="doRegister()">Tạo tài khoản</button>
+  </div>
+
+  <!-- QUÊN MẬT KHẨU — nhập email -->
+  <div id="forgot-screen" style="display:none">
+    <div style="font-size:17px;font-weight:800;color:#1e293b;margin-bottom:6px">Quên mật khẩu</div>
+    <div style="font-size:13px;color:#64748b;line-height:1.7;margin-bottom:16px">
+      Nhập email đã đăng ký, chúng tôi sẽ gửi đường dẫn để Anh/Chị tạo mật khẩu mới.
+    </div>
+    <div class="form-group">
+      <label>Email đã đăng ký</label>
+      <input type="email" id="forgot-email" placeholder="email@example.com" onkeydown="if(event.key==='Enter')doForgot()">
+    </div>
+    <button class="btn btn-primary" id="btn-forgot" onclick="doForgot()">Gửi đường dẫn đặt lại</button>
+    <div style="text-align:center;margin-top:14px">
+      <a onclick="switchTab('login')" style="font-size:13px;color:#64748b;font-weight:600;cursor:pointer">&larr; Quay lại đăng nhập</a>
+    </div>
+  </div>
+
+  <!-- ĐÃ GỬI MAIL -->
+  <div class="verify-screen" id="forgot-sent" style="display:none">
+    <div class="verify-icon">📧</div>
+    <div class="verify-title">Đã gửi email!</div>
+    <div class="verify-desc">
+      Đường dẫn đặt lại mật khẩu đã được gửi tới<br>
+      <strong id="fs-email"></strong><br><br>
+      <small style="color:#94a3b8">Đường dẫn dùng được <b>một lần</b>, hết hạn sau <b>1 giờ</b>.<br>
+      Không thấy email? Kiểm tra thêm thư mục <b>Thư rác / Spam</b>.</small>
+    </div>
+    <button class="btn btn-primary" onclick="switchTab('login')">← Quay lại đăng nhập</button>
+  </div>
+
+  <!-- ĐẶT MẬT KHẨU MỚI (mở từ link trong email) -->
+  <div id="newpass-screen" style="display:none">
+    <div style="font-size:17px;font-weight:800;color:#1e293b;margin-bottom:6px">Đặt mật khẩu mới</div>
+    <div style="font-size:13px;color:#64748b;line-height:1.7;margin-bottom:16px" id="np-sub"></div>
+    <div class="form-group">
+      <label>Mật khẩu mới</label>
+      <input type="password" id="np-1" placeholder="Ít nhất 6 ký tự">
+    </div>
+    <div class="form-group">
+      <label>Nhập lại mật khẩu mới</label>
+      <input type="password" id="np-2" placeholder="Gõ lại cho khớp" onkeydown="if(event.key==='Enter')doNewPass()">
+    </div>
+    <button class="btn btn-primary" id="btn-np" onclick="doNewPass()">Đổi mật khẩu</button>
+  </div>
+
+  <!-- ĐỔI XONG -->
+  <div class="verify-screen" id="newpass-done" style="display:none">
+    <div class="verify-icon">✅</div>
+    <div class="verify-title" style="color:#16a34a">Đã đổi mật khẩu!</div>
+    <div class="verify-desc">
+      Vì lý do an toàn, tất cả thiết bị đang đăng nhập tài khoản này đã được thoát ra.<br>
+      Anh/Chị vui lòng đăng nhập lại bằng <b>mật khẩu mới</b>.
+    </div>
+    <button class="btn btn-primary" onclick="dangNhapLai()">Đăng nhập lại</button>
+  </div>
+
+  <!-- SUCCESS — đăng ký thành công, chờ duyệt -->
+  <div class="verify-screen" id="success-screen" style="display:none">
+    <div class="verify-icon">🎉</div>
+    <div class="verify-title" style="color:#16a34a">Đăng ký thành công!</div>
+    <div class="verify-desc">
+      Tài khoản của bạn đã được tạo thành công.<br>
+      Vui lòng nhắn <strong>Zalo <a href="https://zalo.me/0855335155" target="_blank" rel="noopener" style="color:#2563eb;text-decoration:none">0855335155</a></strong>
+      để duyệt tài khoản và được cấp <strong>mã dùng thử 7 ngày</strong>.
+    </div>
+    <button class="btn btn-primary" onclick="switchTab('login')">← Đăng nhập</button>
+  </div>
+
+  <!-- PENDING — đăng nhập nhưng chưa được duyệt -->
+  <div class="pending-screen" id="pending-screen">
+    <div class="pending-icon">⏳</div>
+    <div class="pending-title">Tài khoản chưa được duyệt</div>
+    <div class="pending-desc">
+      Tài khoản của bạn chưa được duyệt nên chưa đăng nhập được.<br>
+      Vui lòng nhắn <strong>Zalo <a href="https://zalo.me/0855335155" target="_blank" rel="noopener" style="color:#2563eb;text-decoration:none">0855335155</a></strong>
+      để duyệt tài khoản và được cấp <strong>mã dùng thử 7 ngày</strong>.
+    </div>
+    <button class="btn btn-primary" onclick="switchTab('login')">← Quay lại</button>
+  </div>
+
+  <div class="footer-note">© 2025 KTool</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+const _SB_URL = 'https://tcdihhgjikvhdnatygbl.supabase.co';
+const _SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRjZGloaGdqaWt2aGRuYXR5Z2JsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQxODk5OTYsImV4cCI6MjEwOTc2NTk5Nn0.ZIBS80902z2P2uX6UPRBoagFpYJJsHVM4rJwI7EyBOc';
+const sb = window.supabase.createClient(_SB_URL, _SB_KEY);
+const TOOL_PAGE = 'ktool.html';
+
+// Mở màn hình đặt mật khẩu mới. Dùng chung cho cả 2 kiểu link:
+//  - Link mới:  ?token_hash=...&type=recovery   (trỏ thẳng về khoatran.io.vn)
+//  - Link cũ:   Supabase xác thực rồi trả về kèm #access_token=...&type=recovery
+// Kiểu cũ tự tạo sẵn phiên đăng nhập, nếu không chặn thì khách vào thẳng tool
+// mà chưa hề đổi mật khẩu — đúng lỗi đã gặp.
+function moManHinhDatLaiMK(email) {
+  window.__dangDatLaiMK = true;
+  if (email) window.__emailDatLai = email;
+  showLoading(false);
+  hideAll();
+  document.getElementById('np-sub').innerHTML = 'Tài khoản <b>' + (window.__emailDatLai || '') + '</b>';
+  document.getElementById('newpass-screen').style.display = 'block';
+  const o = document.getElementById('np-1');
+  if (o) { o.value = ''; o.focus(); }
+  document.getElementById('np-2').value = '';
+  history.replaceState(null, '', window.location.pathname);
+}
+
+// Supabase bắn sự kiện này khi nhận ra người dùng vào bằng link đặt lại mật khẩu
+sb.auth.onAuthStateChange(function (event, session) {
+  if (event === 'PASSWORD_RECOVERY') {
+    moManHinhDatLaiMK(session && session.user ? session.user.email : '');
+  }
+});
+
+// ── Helpers ──────────────────────────────────────────────────
+function showLoading(v) {
+  document.getElementById('loading-overlay').classList.toggle('show', v);
+}
+function showError(msg) {
+  const el = document.getElementById('alert-error');
+  el.textContent = msg; el.style.display = 'block';
+  document.getElementById('alert-success').style.display = 'none';
+  setTimeout(() => { el.style.display = 'none'; }, 5000);
+}
+function showSuccess(msg) {
+  const el = document.getElementById('alert-success');
+  el.textContent = msg; el.style.display = 'block';
+  document.getElementById('alert-error').style.display = 'none';
+}
+
+function hideAll() {
+  ['login-form','register-form','pending-screen','success-screen','tabs',
+   'forgot-screen','forgot-sent','newpass-screen','newpass-done'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+}
+
+window.switchTab = function(tab) {
+  hideAll();
+  document.getElementById('tabs').style.display = 'flex';
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    t.classList.toggle('active', tab === 'login' ? i === 0 : i === 1);
+  });
+  document.getElementById(tab === 'login' ? 'login-form' : 'register-form').style.display = 'block';
+};
+
+function mapError(msg) {
+  if (!msg) return 'Đã có lỗi xảy ra.';
+  if (msg.includes('Invalid login credentials')) return 'Email hoặc mật khẩu không đúng.';
+  if (msg.includes('Email not confirmed')) return 'Email chưa được xác minh. Kiểm tra hộp thư và click vào link xác minh.';
+  if (msg.includes('already registered') || msg.includes('already been registered')) return 'Email này đã được đăng ký.';
+  if (msg.includes('Password should be at least')) return 'Mật khẩu phải có ít nhất 6 ký tự.';
+  if (msg.includes('Unable to validate email')) return 'Email không hợp lệ.';
+  if (msg.includes('rate limit')) return 'Quá nhiều lần thử. Vui lòng đợi vài phút.';
+  return 'Đã có lỗi xảy ra. Vui lòng thử lại.';
+}
+
+// ── Check auth on load ─────────────────────────────────────
+async function checkSession() {
+  // Không show loading ở đây — tránh block UI nếu lỗi
+  try {
+  // Handle redirect from email verification or Google OAuth
+  const hash = window.location.hash;
+  const params = new URLSearchParams(window.location.search);
+  const errorDesc = params.get('error_description');
+
+  if (errorDesc) {
+    showLoading(false);
+    switchTab('login');
+    showError(decodeURIComponent(errorDesc.replace(/\+/g, ' ')));
+    history.replaceState(null, '', window.location.pathname);
+    return;
+  }
+
+  // Link trong email đặt lại mật khẩu: ?token_hash=...&type=recovery
+  // Phải xử lý TRƯỚC phần kiểm tra phiên, vì verifyOtp sẽ tạo ra phiên đăng nhập
+  // và nếu không chặn ở đây thì khách bị đẩy thẳng vào tool, không kịp đổi mật khẩu.
+  // Link kiểu CŨ: Supabase trả mã về sau dấu #, và đã tạo sẵn phiên đăng nhập
+  if (hash && hash.indexOf('type=recovery') >= 0) {
+    const { data: { session: sRec } } = await sb.auth.getSession();
+    moManHinhDatLaiMK(sRec && sRec.user ? sRec.user.email : '');
+    return;
+  }
+
+  const tokenHash = params.get('token_hash');
+  if (tokenHash && params.get('type') === 'recovery') {
+    history.replaceState(null, '', window.location.pathname);   // giấu mã khỏi thanh địa chỉ
+    const { data: vd, error: verr } = await sb.auth.verifyOtp({ type: 'recovery', token_hash: tokenHash });
+    showLoading(false);
+    if (verr) {
+      switchTab('login');
+      showError('Đường dẫn đã hết hạn hoặc đã dùng rồi. Bấm "Quên mật khẩu?" để nhận đường dẫn mới.');
+      return;
+    }
+    moManHinhDatLaiMK((vd && vd.user && vd.user.email) ? vd.user.email : '');
+    return;
+  }
+
+  const { data: { session } } = await sb.auth.getSession();
+
+  if (!session) {
+    showLoading(false);
+    switchTab('login');
+    return;
+  }
+
+  await handleSession(session);
+  } catch(e) {
+    console.error('checkSession error:', e);
+    switchTab('login');
+  } finally {
+    showLoading(false);
+  }
+}
+
+async function handleSession(session) {
+  // Chốt chặn: đang ở giữa luồng đặt lại mật khẩu thì tuyệt đối không đẩy
+  // khách vào tool, dù họ đã có phiên đăng nhập hợp lệ.
+  if (window.__dangDatLaiMK) return;
+
+  const user = session.user;
+
+  // Check approved
+  const { data: profile } = await sb
+    .from('profiles')
+    .select('approved, status')
+    .eq('id', user.id)
+    .single();
+
+  if (profile?.approved) {
+    window.location.href = TOOL_PAGE;
+  } else {
+    // Chưa duyệt → hiện thông báo chờ duyệt (không sign out)
+    hideAll();
+    document.getElementById('pending-screen').style.display = 'block';
+  }
+}
+
+// ── Rate limit ────────────────────────────────────────────
+let _loginAttempts = 0;
+let _loginLockUntil = 0;
+
+// ── Login ──────────────────────────────────────────────────
+window.doLogin = async function() {
+  if (Date.now() < _loginLockUntil) {
+    const secs = Math.ceil((_loginLockUntil - Date.now()) / 1000);
+    showError('Quá nhiều lần thử. Vui lòng đợi ' + secs + ' giây.');
+    return;
+  }
+  const email = document.getElementById('login-email').value.trim();
+  const pass = document.getElementById('login-password').value;
+  if (!email || !pass) { showError('Vui lòng điền đầy đủ thông tin.'); return; }
+  showLoading(true);
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+  showLoading(false);
+  if (error) {
+    _loginAttempts++;
+    if (_loginAttempts >= 5) { _loginLockUntil = Date.now() + 30000; _loginAttempts = 0; }
+    showError(mapError(error.message));
+    return;
+  }
+  _loginAttempts = 0;
+  await handleSession(data.session);
+};
+
+// ── Register ───────────────────────────────────────────────
+window.doRegister = async function() {
+  const name = document.getElementById('reg-name').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const pass = document.getElementById('reg-password').value;
+  const pass2 = document.getElementById('reg-password2').value;
+  if (!name || !email || !pass) { showError('Vui lòng điền đầy đủ thông tin.'); return; }
+  if (pass !== pass2) { showError('Mật khẩu xác nhận không khớp.'); return; }
+  if (pass.length < 6) { showError('Mật khẩu phải có ít nhất 6 ký tự.'); return; }
+
+  showLoading(true);
+  const { data, error } = await sb.auth.signUp({
+    email, password: pass,
+    options: {
+      data: { full_name: name, name: name },
+      emailRedirectTo: 'https://khoatran.io.vn/ktool/login.html'
+    }
+  });
+  showLoading(false);
+
+  if (error) { showError(mapError(error.message)); return; }
+
+  // Đăng ký xong → hiện thông báo thành công, chờ admin duyệt
+  await sb.auth.signOut();
+  hideAll();
+  document.getElementById('success-screen').style.display = 'block';
+};
+
+// ── Google Login ───────────────────────────────────────────
+window.doGoogleLogin = async function() {
+  const { error } = await sb.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: 'https://khoatran.io.vn/ktool/login.html' }
+  });
+  if (error) showError(mapError(error.message));
+};
+
+
+// ── Check approval ─────────────────────────────────────────
+window.checkApproval = async function() {
+  showLoading(true);
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { showLoading(false); switchTab('login'); return; }
+  await handleSession(session);
+  showLoading(false);
+  const pending = document.getElementById('pending-screen').style.display !== 'none';
+  if (pending) showError('Tài khoản chưa được duyệt. Vui lòng nhắn Zalo 0855335155 để duyệt tài khoản và nhận mã dùng thử 7 ngày.');
+};
+
+// ── Quên mật khẩu ──────────────────────────────────────────
+window.showForgot = function() {
+  hideAll();
+  document.getElementById('forgot-screen').style.display = 'block';
+  const e = document.getElementById('login-email').value.trim();
+  if (e) document.getElementById('forgot-email').value = e;
+  document.getElementById('forgot-email').focus();
+};
+
+window.doForgot = async function() {
+  const email = document.getElementById('forgot-email').value.trim();
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+    showError('Email chưa đúng định dạng.');
+    return;
+  }
+  const btn = document.getElementById('btn-forgot');
+  btn.disabled = true; btn.textContent = 'Đang gửi...';
+  const { error } = await sb.auth.resetPasswordForEmail(email);
+  btn.disabled = false; btn.textContent = 'Gửi đường dẫn đặt lại';
+  if (error) { showError(mapError(error.message)); return; }
+
+  // Supabase cố tình không cho biết email có tồn tại hay không, để người lạ
+  // không dò được ai đang là khách hàng. Nên lúc nào cũng báo "đã gửi".
+  hideAll();
+  document.getElementById('fs-email').textContent = email;
+  document.getElementById('forgot-sent').style.display = 'block';
+};
+
+window.doNewPass = async function() {
+  const p1 = document.getElementById('np-1').value || '';
+  const p2 = document.getElementById('np-2').value || '';
+  if (p1.length < 6) { showError('Mật khẩu phải có ít nhất 6 ký tự.'); return; }
+  if (p1 !== p2) { showError('Hai ô mật khẩu chưa khớp nhau.'); return; }
+
+  const btn = document.getElementById('btn-np');
+  btn.disabled = true; btn.textContent = 'Đang lưu...';
+  const { error } = await sb.auth.updateUser({ password: p1 });
+  if (error) {
+    btn.disabled = false; btn.textContent = 'Đổi mật khẩu';
+    showError(mapError(error.message));
+    return;
+  }
+
+  // Đăng xuất TẤT CẢ thiết bị. Nếu người lạ đang chiếm tài khoản trên máy khác
+  // mà đổi mật khẩu xong họ vẫn ngồi trong đó thì việc đổi coi như vô nghĩa.
+  // Đồng thời buộc chính chủ đăng nhập lại bằng mật khẩu mới.
+  try { await sb.auth.signOut({ scope: 'global' }); }
+  catch (e) { try { await sb.auth.signOut(); } catch (e2) {} }
+  window.__dangDatLaiMK = false;
+
+  btn.disabled = false; btn.textContent = 'Đổi mật khẩu';
+  hideAll();
+  document.getElementById('newpass-done').style.display = 'block';
+};
+
+window.dangNhapLai = function() {
+  switchTab('login');
+  const e = document.getElementById('login-email');
+  if (window.__emailDatLai) e.value = window.__emailDatLai;
+  document.getElementById('login-password').value = '';
+  document.getElementById('login-password').focus();
+  showSuccess('Đã đổi mật khẩu. Vui lòng đăng nhập bằng mật khẩu mới.');
+};
+
+// ── Logout ─────────────────────────────────────────────────
+window.doLogout = async function() {
+  await sb.auth.signOut();
+  switchTab('login');
+};
+
+// ── Init ───────────────────────────────────────────────────
+checkSession();
+
+sb.auth.onAuthStateChange((_event, session) => {
+  if (_event === 'SIGNED_IN' && session) {
+    handleSession(session);
+  }
+});
+</script>
+</body>
+</html>

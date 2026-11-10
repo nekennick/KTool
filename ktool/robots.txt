@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://khoatran.io.vn/ktool/sitemap.xml

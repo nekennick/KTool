@@ -1,0 +1,2482 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin | KTool</title>
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co; img-src 'self' data:;">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Be Vietnam Pro', sans-serif;
+      background: #f0f4f8;
+      min-height: 100vh;
+      color: #1e293b;
+    }
+
+    /* Login gate */
+    #login-gate {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #0f172a, #1e3a5f);
+    }
+
+    .login-box {
+      background: #fff;
+      border-radius: 20px;
+      padding: 40px;
+      width: 100%;
+      max-width: 380px;
+      text-align: center;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, .3);
+    }
+
+    .login-box h2 {
+      font-size: 20px;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+
+    .login-box p {
+      font-size: 14px;
+      color: #64748b;
+      margin-bottom: 24px;
+    }
+
+    .login-box input {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 10px;
+      font-size: 14px;
+      font-family: inherit;
+      margin-bottom: 12px;
+      background: #f8fafc;
+      color: #1e293b;
+    }
+
+    .login-box input:focus {
+      outline: none;
+      border-color: #2563eb;
+      background: #fff;
+    }
+
+    .btn-primary {
+      width: 100%;
+      padding: 13px;
+      background: linear-gradient(135deg, #2563eb, #7c3aed);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .btn-primary:hover {
+      opacity: .9;
+    }
+
+    .error-msg {
+      color: #dc2626;
+      font-size: 13px;
+      margin-bottom: 12px;
+      display: none;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      position: fixed;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 240px;
+      background: linear-gradient(180deg, #0f172a 0%, #1e3a5f 100%);
+      padding: 24px 16px;
+      z-index: 100;
+      overflow-y: auto;
+    }
+
+    .sidebar-logo {
+      font-size: 18px;
+      font-weight: 800;
+      color: #fff;
+      padding: 8px 12px;
+      margin-bottom: 32px;
+    }
+
+    .sidebar-logo span {
+      color: #60a5fa;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      color: #94a3b8;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all .2s;
+      margin-bottom: 4px;
+    }
+
+    .nav-item:hover,
+    .nav-item.active {
+      background: rgba(255, 255, 255, .1);
+      color: #fff;
+    }
+
+    .sidebar-bottom {
+      position: absolute;
+      bottom: 20px;
+      left: 16px;
+      right: 16px;
+    }
+
+    .admin-badge {
+      background: rgba(96, 165, 250, .15);
+      border: 1px solid rgba(96, 165, 250, .3);
+      border-radius: 10px;
+      padding: 12px;
+      color: #93c5fd;
+      font-size: 12px;
+    }
+
+    .admin-email {
+      font-weight: 700;
+      color: #fff;
+      font-size: 12px;
+      margin-bottom: 2px;
+      word-break: break-all;
+    }
+
+    .btn-logout {
+      margin-top: 10px;
+      width: 100%;
+      padding: 8px;
+      border-radius: 8px;
+      background: rgba(239, 68, 68, .15);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, .3);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .btn-logout:hover {
+      background: rgba(239, 68, 68, .3);
+    }
+
+    /* Main */
+    .main {
+      margin-left: 240px;
+      padding: 28px;
+    }
+
+    .page-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .page-title {
+      font-size: 22px;
+      font-weight: 800;
+    }
+
+    .page-sub {
+      font-size: 13px;
+      color: #64748b;
+      margin-top: 2px;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    /* Pages */
+    .page {
+      display: none;
+    }
+
+    .page.active {
+      display: block;
+    }
+
+    /* Stats */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      background: #fff;
+      border-radius: 14px;
+      padding: 18px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, .06);
+    }
+
+    .stat-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+    }
+
+    .stat-value {
+      font-size: 26px;
+      font-weight: 800;
+      margin: 4px 0 2px;
+    }
+
+    .blue .stat-value {
+      color: #2563eb;
+    }
+
+    .yellow .stat-value {
+      color: #d97706;
+    }
+
+    .green .stat-value {
+      color: #16a34a;
+    }
+
+    .red .stat-value {
+      color: #dc2626;
+    }
+
+    /* Charts */
+    .chart-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .chart-card {
+      background: #fff;
+      border-radius: 14px;
+      padding: 20px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, .06);
+    }
+
+    .chart-card h3 {
+      font-size: 14px;
+      font-weight: 700;
+      color: #374151;
+      margin-bottom: 12px;
+    }
+
+    .chart-card canvas {
+      max-height: 200px;
+    }
+
+    /* Filter */
+    .filter-bar {
+      background: #fff;
+      border-radius: 14px;
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, .06);
+      flex-wrap: wrap;
+    }
+
+    .search-input {
+      flex: 1;
+      min-width: 180px;
+      padding: 9px 14px;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 9px;
+      font-size: 13px;
+      font-family: inherit;
+      color: #1e293b;
+    }
+
+    .search-input:focus {
+      outline: none;
+      border-color: #2563eb;
+    }
+
+    .filter-btn {
+      padding: 8px 14px;
+      border-radius: 9px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      font-family: inherit;
+      transition: all .2s;
+      white-space: nowrap;
+    }
+
+    .filter-btn.active {
+      background: #2563eb;
+      color: #fff;
+    }
+
+    .filter-btn:not(.active) {
+      background: #f1f5f9;
+      color: #374151;
+    }
+
+    .filter-btn:not(.active):hover {
+      background: #e2e8f0;
+    }
+
+    .sort-select {
+      padding: 8px 12px;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 9px;
+      font-size: 12px;
+      font-family: inherit;
+      color: #374151;
+      background: #f8fafc;
+      cursor: pointer;
+    }
+
+    /* Table */
+    .table-card {
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, .06);
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 800px;
+    }
+
+    thead {
+      background: #f8fafc;
+    }
+
+    th {
+      padding: 10px 14px;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 700;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      border-bottom: 1px solid #e2e8f0;
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 12px 14px;
+      border-bottom: 1px solid #f1f5f9;
+      font-size: 13px;
+      vertical-align: middle;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover td {
+      background: #f8fafc;
+    }
+
+    .avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #2563eb, #7c3aed);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .user-name {
+      font-weight: 600;
+      color: #1e293b;
+      font-size: 13px;
+    }
+
+    .user-email {
+      font-size: 11px;
+      color: #64748b;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 9px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .badge-pending {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .badge-approved {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .badge-rejected {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .badge-expired {
+      background: #ffe4e6;
+      color: #9f1239;
+    }
+
+    .badge-forever {
+      background: #ede9fe;
+      color: #6d28d9;
+    }
+
+    .badge-exp-ok {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .badge-exp-mid {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .badge-exp-soon {
+      background: #fee2e2;
+      color: #b91c1b;
+    }
+
+    .exp-sub {
+      font-size: 10px;
+      color: #94a3b8;
+      margin-top: 2px;
+    }
+
+    .btn-extend {
+      padding: 5px 12px;
+      background: #ede9fe;
+      color: #6d28d9;
+      border: 1px solid #ddd6fe;
+      border-radius: 7px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .btn-extend:hover {
+      background: #ddd6fe;
+    }
+
+    .dur-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+      margin: 14px 0 10px;
+    }
+
+    .dur-opt {
+      padding: 12px 8px;
+      border: 2px solid #e2e8f0;
+      border-radius: 10px;
+      background: #fff;
+      cursor: pointer;
+      text-align: center;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      color: #334155;
+      transition: all .15s;
+    }
+
+    .dur-opt:hover {
+      border-color: #93c5fd;
+      background: #f8fafc;
+    }
+
+    .dur-opt.sel {
+      border-color: #2563eb;
+      background: #eff6ff;
+      color: #1d4ed8;
+    }
+
+    .dur-opt small {
+      display: block;
+      font-weight: 500;
+      font-size: 10px;
+      color: #94a3b8;
+      margin-top: 3px;
+    }
+
+    .dur-opt.sel small {
+      color: #60a5fa;
+    }
+
+    .dur-custom {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: #475569;
+    }
+
+    .dur-custom input {
+      padding: 8px 10px;
+      border: 1.5px solid #d1d5db;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 13px;
+    }
+
+    .badge-revoked {
+      background: #f1f5f9;
+      color: #475569;
+    }
+
+    .badge-super {
+      background: #ede9fe;
+      color: #5b21b6;
+    }
+
+    .badge-admin {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .badge-member {
+      background: #f1f5f9;
+      color: #475569;
+    }
+
+    .provider-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 7px;
+      border-radius: 6px;
+      font-size: 10px;
+      font-weight: 600;
+      background: #f1f5f9;
+      color: #475569;
+    }
+
+    .actions {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+    }
+
+    .btn-approve {
+      padding: 5px 12px;
+      background: #16a34a;
+      color: #fff;
+      border: none;
+      border-radius: 7px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .btn-approve:hover {
+      background: #15803d;
+    }
+
+    .btn-reject {
+      padding: 5px 12px;
+      background: #fee2e2;
+      color: #dc2626;
+      border: 1px solid #fecaca;
+      border-radius: 7px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .btn-reject:hover {
+      background: #fecaca;
+    }
+
+    .btn-revoke {
+      padding: 5px 12px;
+      background: #fef3c7;
+      color: #92400e;
+      border: 1px solid #fde68a;
+      border-radius: 7px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .btn-set-admin {
+      padding: 5px 12px;
+      background: #fef3c7;
+      color: #92400e;
+      border: 1px solid #fde68a;
+      border-radius: 7px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .btn-remove-admin {
+      padding: 5px 12px;
+      background: #f1f5f9;
+      color: #475569;
+      border: 1px solid #e2e8f0;
+      border-radius: 7px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .btn-delete {
+      padding: 5px 12px;
+      background: #dc2626;
+      color: #fff;
+      border: none;
+      border-radius: 7px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .btn-delete:hover {
+      background: #b91c1c;
+    }
+
+    .tc-ngay {
+      border: 1.5px solid #e2e8f0;
+      border-radius: 10px;
+      margin-bottom: 8px;
+      background: #fff;
+    }
+
+    .tc-ngay summary {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      cursor: pointer;
+      list-style: none;
+      font-size: 13.5px;
+    }
+
+    .tc-ngay summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .tc-ngay summary::before {
+      content: '▸';
+      color: #94a3b8;
+      font-size: 12px;
+      flex: none;
+    }
+
+    .tc-ngay[open] summary::before {
+      content: '▾';
+    }
+
+    .tc-ngay[open] {
+      border-color: #bfdbfe;
+    }
+
+    .tc-nhan {
+      font-weight: 700;
+      color: #1e293b;
+      min-width: 150px;
+      flex: none;
+    }
+
+    .tc-thanh {
+      flex: 1;
+      height: 8px;
+      background: #f1f5f9;
+      border-radius: 99px;
+      overflow: hidden;
+      min-width: 60px;
+    }
+
+    .tc-thanh i {
+      display: block;
+      height: 100%;
+      background: #2563eb;
+      border-radius: 99px;
+    }
+
+    .tc-so {
+      color: #64748b;
+      white-space: nowrap;
+      flex: none;
+    }
+
+    .tc-so b {
+      color: #2563eb;
+      font-size: 15px;
+    }
+
+    .tc-mail {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding: 4px 14px 14px 34px;
+    }
+
+    .tc-chip {
+      background: #f1f5f9;
+      border: 1px solid #e2e8f0;
+      border-radius: 7px;
+      padding: 4px 9px;
+      font-size: 12px;
+      color: #334155;
+    }
+
+    .tc-chip i {
+      color: #94a3b8;
+      font-style: normal;
+      margin-left: 4px;
+      font-size: 11px;
+    }
+
+    .btn-export {
+      padding: 8px 16px;
+      background: #16a34a;
+      color: #fff;
+      border: none;
+      border-radius: 9px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .btn-export:hover {
+      background: #15803d;
+    }
+
+    .btn-refresh {
+      padding: 8px 16px;
+      background: #2563eb;
+      color: #fff;
+      border: none;
+      border-radius: 9px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .btn-refresh:hover {
+      background: #1d4ed8;
+    }
+
+    .select-cb {
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+      accent-color: #dc2626;
+    }
+
+    .bulk-bar {
+      display: none;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      border-radius: 12px;
+      padding: 10px 18px;
+      margin-bottom: 14px;
+      align-items: center;
+      gap: 12px;
+      font-size: 13px;
+      color: #991b1b;
+      font-weight: 600;
+    }
+
+    .bulk-bar.show {
+      display: flex;
+    }
+
+    .bulk-bar .bulk-actions {
+      margin-left: auto;
+      display: flex;
+      gap: 8px;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 50px 20px;
+      color: #94a3b8;
+      font-size: 14px;
+    }
+
+    /* Pagination */
+    .pagination {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 16px;
+    }
+
+    .page-btn {
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid #e2e8f0;
+      background: #fff;
+      color: #374151;
+      font-family: inherit;
+    }
+
+    .page-btn.active {
+      background: #2563eb;
+      color: #fff;
+      border-color: #2563eb;
+    }
+
+    .page-btn:disabled {
+      opacity: .4;
+      cursor: not-allowed;
+    }
+
+    .page-info {
+      font-size: 12px;
+      color: #64748b;
+      margin: 0 8px;
+    }
+
+    /* Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .4);
+      backdrop-filter: blur(4px);
+      align-items: center;
+      justify-content: center;
+      z-index: 998;
+      padding: 20px;
+    }
+
+    .modal-overlay.show {
+      display: flex;
+    }
+
+    .modal {
+      background: #fff;
+      border-radius: 16px;
+      padding: 24px;
+      width: 100%;
+      max-width: 500px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, .2);
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal h3 {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 14px;
+      color: #1e293b;
+    }
+
+    .detail-row {
+      display: flex;
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+
+    .detail-label {
+      width: 130px;
+      font-weight: 600;
+      color: #64748b;
+      flex-shrink: 0;
+    }
+
+    .detail-value {
+      color: #1e293b;
+      word-break: break-all;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+
+    .modal-actions button {
+      flex: 1;
+      min-width: 90px;
+      padding: 9px;
+    }
+
+    .btn-close-modal {
+      background: #f1f5f9;
+      color: #374151;
+      border: none;
+      border-radius: 9px;
+      font-family: inherit;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn-close-modal:hover {
+      background: #e2e8f0;
+    }
+
+    /* Note textarea */
+    .note-area {
+      width: 100%;
+      padding: 10px;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 9px;
+      font-size: 13px;
+      font-family: inherit;
+      resize: vertical;
+      min-height: 60px;
+      color: #1e293b;
+      margin-top: 8px;
+    }
+
+    .note-area:focus {
+      outline: none;
+      border-color: #2563eb;
+    }
+
+    .btn-save-note {
+      margin-top: 6px;
+      padding: 6px 16px;
+      background: #2563eb;
+      color: #fff;
+      border: none;
+      border-radius: 7px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    /* Activity log */
+    .log-list {
+      max-height: 500px;
+      overflow-y: auto;
+    }
+
+    .log-item {
+      display: flex;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid #f1f5f9;
+      font-size: 13px;
+      align-items: flex-start;
+    }
+
+    .log-item:last-child {
+      border-bottom: none;
+    }
+
+    .log-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+      background: #f1f5f9;
+    }
+
+    .log-content {
+      flex: 1;
+    }
+
+    .log-admin {
+      font-weight: 700;
+      color: #2563eb;
+    }
+
+    .log-action {
+      color: #374151;
+    }
+
+    .log-target {
+      font-weight: 600;
+      color: #1e293b;
+    }
+
+    .log-time {
+      font-size: 11px;
+      color: #94a3b8;
+      margin-top: 2px;
+    }
+
+    .log-detail {
+      font-size: 12px;
+      color: #64748b;
+      font-style: italic;
+    }
+
+    /* Toast */
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      padding: 12px 18px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #fff;
+      z-index: 9999;
+      transform: translateY(80px);
+      opacity: 0;
+      transition: all .3s;
+      max-width: 340px;
+    }
+
+    #toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    #toast.success {
+      background: #16a34a;
+    }
+
+    #toast.error {
+      background: #dc2626;
+    }
+
+    #loading-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, .5);
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+    }
+
+    #loading-overlay.show {
+      display: flex;
+    }
+
+    .spinner {
+      width: 44px;
+      height: 44px;
+      border: 4px solid rgba(255, 255, 255, .3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    @media (max-width: 1100px) {
+      .stats {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .chart-row {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Login gate -->
+  <div id="login-gate">
+    <div class="login-box">
+      <div style="font-size:36px;margin-bottom:10px">🔐</div>
+      <h2>Admin KTool</h2>
+      <p>Đăng nhập bằng tài khoản quản trị</p>
+      <div class="error-msg" id="gate-error"></div>
+      <input type="email" id="gate-email" placeholder="Email Admin" onkeydown="if(event.key==='Enter')adminLogin()">
+      <input type="password" id="gate-pass" placeholder="Mật khẩu" onkeydown="if(event.key==='Enter')adminLogin()">
+      <button class="btn-primary" onclick="adminLogin()">Đăng nhập</button>
+    </div>
+  </div>
+
+  <!-- Admin UI -->
+  <div id="admin-ui" style="display:none">
+    <div class="sidebar">
+      <div class="sidebar-logo">⚡ K<span>Tool</span></div>
+      <div class="nav-item active" data-page="users" onclick="setPage('users')">
+        <span>👥</span> Quản lý tài khoản
+      </div>
+      <div class="nav-item" data-page="dashboard" onclick="setPage('dashboard')">
+        <span>📊</span> Thống kê
+      </div>
+      <div class="nav-item" data-page="pay" onclick="setPage('pay')">
+        <span>💳</span> Thanh toán
+      </div>
+      <div class="nav-item" data-page="logs" onclick="setPage('logs')">
+        <span>📋</span> Lịch sử hoạt động
+      </div>
+      <div class="nav-item" onclick="window.open('ktool.html','_blank')">
+        <span>🛠️</span> Mở Tool
+      </div>
+      <div class="sidebar-bottom">
+        <div class="admin-badge">
+          <div class="admin-email" id="admin-email-display"></div>
+          <div style="color:#60a5fa;margin-top:2px">Quản trị viên</div>
+        </div>
+        <button class="btn-logout" onclick="doLogout()">🚪 Đăng xuất</button>
+      </div>
+    </div>
+
+    <div class="main">
+      <!-- ===== PAGE: Users ===== -->
+      <div class="page active" id="page-users">
+        <div class="page-header">
+          <div>
+            <div class="page-title">Quản lý tài khoản</div>
+            <div class="page-sub">Duyệt và quản lý người dùng đăng ký</div>
+          </div>
+          <div class="header-actions">
+            <button class="btn-export" onclick="exportExcel()">📥 Xuất Excel</button>
+            <button class="btn-refresh" onclick="loadUsers()">🔄 Làm mới</button>
+          </div>
+        </div>
+
+        <div class="stats">
+          <div class="stat-card blue">
+            <div class="stat-label">Tổng</div>
+            <div class="stat-value" id="stat-total">—</div>
+          </div>
+          <div class="stat-card yellow">
+            <div class="stat-label">Chờ duyệt</div>
+            <div class="stat-value" id="stat-pending">—</div>
+          </div>
+          <div class="stat-card green">
+            <div class="stat-label">Đã duyệt (còn hạn)</div>
+            <div class="stat-value" id="stat-approved">—</div>
+          </div>
+          <div class="stat-card red">
+            <div class="stat-label">Hết hạn</div>
+            <div class="stat-value" id="stat-expired">—</div>
+          </div>
+          <div class="stat-card red">
+            <div class="stat-label">Từ chối / Thu hồi</div>
+            <div class="stat-value" id="stat-rejected">—</div>
+          </div>
+        </div>
+
+        <div class="filter-bar">
+          <input class="search-input" id="search-input" placeholder="🔍 Tìm theo tên hoặc email..."
+            oninput="renderTable()">
+          <select class="sort-select" id="sort-select" onchange="renderTable()">
+            <option value="newest">Mới nhất</option>
+            <option value="oldest">Cũ nhất</option>
+            <option value="name-az">Tên A→Z</option>
+            <option value="name-za">Tên Z→A</option>
+          </select>
+          <button class="filter-btn active" id="filter-all" onclick="setFilter('all')">Tất cả</button>
+          <button class="filter-btn" id="filter-pending" onclick="setFilter('pending')">⏳ Chờ</button>
+          <button class="filter-btn" id="filter-approved" onclick="setFilter('approved')">✅ Duyệt</button>
+          <button class="filter-btn" id="filter-expired" onclick="setFilter('expired')">⛔ Hết hạn</button>
+          <button class="filter-btn" id="filter-rejected" onclick="setFilter('rejected')">❌ Từ chối</button>
+        </div>
+
+        <div class="bulk-bar" id="bulk-bar">
+          <span id="bulk-count">0</span>&nbsp;tài khoản đã chọn
+          <div class="bulk-actions">
+            <button class="btn-extend" id="bulk-btn-expiry" onclick="bulkSetExpiry()">⏰ Đặt hạn đã chọn</button>
+            <button class="btn-delete" id="bulk-btn-delete" onclick="bulkDelete()">🗑️ Xóa đã chọn</button>
+          </div>
+        </div>
+
+        <div class="table-card">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:36px"><input type="checkbox" class="select-cb" id="select-all"
+                    onchange="toggleSelectAll(this)"></th>
+                <th>Người dùng</th>
+                <th>Vai trò</th>
+                <th>Đăng ký qua</th>
+                <th>Ngày đăng ký</th>
+                <th>Trạng thái</th>
+                <th>Hạn dùng</th>
+                <th>Ghi chú</th>
+                <th>Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="users-table">
+              <tr>
+                <td colspan="9">
+                  <div class="empty-state">⏳ Đang tải...</div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="pagination" id="pagination"></div>
+        </div>
+      </div>
+
+      <!-- ===== PAGE: Dashboard ===== -->
+      <div class="page" id="page-dashboard">
+        <div class="page-header">
+          <div>
+            <div class="page-title">📊 Thống kê</div>
+            <div class="page-sub">Tổng quan đăng ký và hoạt động</div>
+          </div>
+        </div>
+        <div class="stats">
+          <div class="stat-card blue">
+            <div class="stat-label">Tổng tài khoản</div>
+            <div class="stat-value" id="dash-total">—</div>
+          </div>
+          <div class="stat-card green">
+            <div class="stat-label">Tỷ lệ duyệt</div>
+            <div class="stat-value" id="dash-rate">—</div>
+          </div>
+          <div class="stat-card yellow">
+            <div class="stat-label">Admin</div>
+            <div class="stat-value" id="dash-admins">—</div>
+          </div>
+          <div class="stat-card red">
+            <div class="stat-label">Đăng ký 7 ngày qua</div>
+            <div class="stat-value" id="dash-recent">—</div>
+          </div>
+        </div>
+        <div class="chart-row">
+          <div class="chart-card">
+            <h3>Đăng ký theo ngày (30 ngày gần nhất)</h3>
+            <canvas id="chart-daily"></canvas>
+          </div>
+          <div class="chart-card">
+            <h3>Phân bổ trạng thái</h3>
+            <canvas id="chart-status"></canvas>
+          </div>
+        </div>
+        <div class="chart-row">
+          <div class="chart-card">
+            <h3>Đăng ký qua</h3>
+            <canvas id="chart-provider"></canvas>
+          </div>
+          <div class="chart-card">
+            <h3>Vai trò</h3>
+            <canvas id="chart-role"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== PAGE: Thanh toán ===== -->
+      <div class="page" id="page-pay">
+        <div class="page-header">
+          <div>
+            <div class="page-title">💳 Thanh toán</div>
+            <div class="page-sub">Tiền vào từ SePay &mdash; đơn nào tự cộng hạn, đơn nào cần xử lý tay</div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn-export" onclick="exportInvoices()">🧾 Xuất file hoá đơn</button>
+            <button class="btn-refresh" onclick="loadPayments()">🔄 Làm mới</button>
+          </div>
+        </div>
+
+        <div class="stats">
+          <div class="stat-card green">
+            <div class="stat-label">Doanh thu tháng này</div>
+            <div class="stat-value" id="pay-rev-month">0đ</div>
+          </div>
+          <div class="stat-card blue">
+            <div class="stat-label">Đã gia hạn tự động</div>
+            <div class="stat-value" id="pay-ok-count">0</div>
+          </div>
+          <div class="stat-card red">
+            <div class="stat-label">Cần xử lý tay</div>
+            <div class="stat-value" id="pay-manual-count">0</div>
+          </div>
+          <div class="stat-card yellow">
+            <div class="stat-label">Tổng thu từ trước tới nay</div>
+            <div class="stat-value" id="pay-rev-all">0đ</div>
+          </div>
+        </div>
+
+        <div class="table-card" style="padding:16px;margin-bottom:20px">
+          <div style="font-size:14px;font-weight:800;color:#dc2626;margin-bottom:12px">⚠️ Cần xử lý tay</div>
+          <div id="pay-manual">
+            <div class="empty-state">⏳ Đang tải...</div>
+          </div>
+        </div>
+
+        <div class="table-card" style="padding:16px;margin-bottom:20px">
+          <div style="font-size:14px;font-weight:800;color:#1e293b;margin-bottom:12px">📜 Giao dịch của tool</div>
+          <div id="pay-list">
+            <div class="empty-state">⏳ Đang tải...</div>
+          </div>
+        </div>
+
+        <details class="table-card" style="padding:16px">
+          <summary style="font-size:14px;font-weight:800;color:#64748b;cursor:pointer">
+            🏦 Tiền vào khác — không liên quan tool (<span id="pay-khac-count">0</span>)
+          </summary>
+          <div style="font-size:12.5px;color:#94a3b8;margin:8px 0 12px;line-height:1.7">
+            SePay gửi về <b>mọi khoản tiền vào</b> tài khoản ngân hàng này, kể cả tiền dịch vụ vận hành sàn.
+            Những khoản không có mã <b>HDT</b> thì không phải tiền mua tool — tool chỉ ghi sổ cho đủ, Sếp không cần xử
+            lý gì.
+          </div>
+          <div id="pay-khac"></div>
+        </details>
+      </div>
+
+      <!-- ===== PAGE: Logs ===== -->
+      <div class="page" id="page-logs">
+        <div class="page-header">
+          <div>
+            <div class="page-title">📋 Lịch sử hoạt động</div>
+            <div class="page-sub">Audit trail — ai làm gì, lúc nào</div>
+          </div>
+          <button class="btn-refresh" onclick="loadLogs()">🔄 Làm mới</button>
+        </div>
+        <div class="table-card" style="padding:16px;margin-bottom:16px">
+          <div
+            style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:4px">
+            <div style="font-weight:800;font-size:15px">👣 Truy cập tool theo ngày</div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <select id="tc-range" onchange="loadTruyCap()"
+                style="padding:7px 10px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px;font-family:inherit">
+                <option value="7">7 ngày qua</option>
+                <option value="30" selected>30 ngày qua</option>
+                <option value="90">90 ngày qua</option>
+              </select>
+              <button class="btn-refresh" onclick="loadTruyCap()">🔄</button>
+            </div>
+          </div>
+          <div id="tc-tomtat" style="font-size:13px;color:#64748b;margin-bottom:12px"></div>
+          <div id="tc-list">
+            <div class="empty-state">⏳ Đang tải...</div>
+          </div>
+        </div>
+
+        <div class="filter-bar">
+          <input class="search-input" id="log-search" placeholder="🔍 Tìm theo email hoặc hành động..."
+            oninput="renderLogs()">
+        </div>
+        <div class="table-card" style="padding:16px">
+          <div class="log-list" id="log-list">
+            <div class="empty-state">⏳ Đang tải...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detail Modal -->
+  <!-- Hộp chọn thời hạn sử dụng -->
+  <div class="modal-overlay" id="dur-modal" style="z-index:9999"></div>
+
+  <div class="modal-overlay" id="modal" onclick="if(event.target===this)closeModal()">
+    <div class="modal">
+      <h3>Chi tiết tài khoản</h3>
+      <div id="modal-content"></div>
+      <div id="modal-note"></div>
+      <div class="modal-actions" id="modal-actions"></div>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+  <div id="loading-overlay">
+    <div class="spinner"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script>
+    const _SB_URL = 'https://tcdihhgjikvhdnatygbl.supabase.co';
+    const _SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRjZGloaGdqaWt2aGRuYXR5Z2JsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQxODk5OTYsImV4cCI6MjEwOTc2NTk5Nn0.ZIBS80902z2P2uX6UPRBoagFpYJJsHVM4rJwI7EyBOc';
+    const sb = window.supabase.createClient(_SB_URL, _SB_KEY);
+
+    function esc(s) {
+      if (s == null) return '';
+      return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    const SUPER_ADMIN = 'truongdang987123@gmail.com';
+    const PER_PAGE = 20;
+    let allUsers = [];
+    let allLogs = [];
+    let currentFilter = 'all';
+    let currentPage = 1;
+    let currentUser = null;
+    let charts = {};
+
+    function isSelf(email) { return email === currentUser?.email; }
+    function isSuperAdmin(email) { return email === SUPER_ADMIN; }
+    function canModify(targetEmail) {
+      if (isSelf(targetEmail)) return false;
+      if (isSuperAdmin(targetEmail)) return false;
+      return true;
+    }
+
+    // ── Helpers ──────────────────────────────────────────────────
+    function showLoading(v) { document.getElementById('loading-overlay').classList.toggle('show', v); }
+    function toast(msg, type = 'success') {
+      const el = document.getElementById('toast');
+      el.textContent = msg; el.className = `show ${type}`;
+      setTimeout(() => el.className = '', 3500);
+    }
+    function fmtDate(str) {
+      if (!str) return '—';
+      return new Date(str).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    }
+    function initials(name, email) { return (name || email || '?').charAt(0).toUpperCase(); }
+
+    // ── Hạn dùng ──────────────────────────────────────────────────
+    // expires_at = NULL  ->  vĩnh viễn
+    function isExpired(u) {
+      return !!(u.expires_at && new Date(u.expires_at).getTime() <= Date.now());
+    }
+    function daysLeft(u) {
+      if (!u.expires_at) return null;
+      return Math.ceil((new Date(u.expires_at).getTime() - Date.now()) / 86400000);
+    }
+    function fmtDateOnly(str) {
+      if (!str) return '—';
+      return new Date(str).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    }
+    // Ô "Hạn dùng" trong bảng
+    function expiryHtml(u) {
+      const st = getStatus(u);
+      if (st !== 'approved' && st !== 'expired') return '<span style="color:#cbd5e1">—</span>';
+      if (!u.expires_at) return '<span class="badge badge-forever">♾️ Vĩnh viễn</span>';
+      const d = daysLeft(u);
+      if (d <= 0) return `<span class="badge badge-expired">⛔ Hết hạn</span><div class="exp-sub">${fmtDateOnly(u.expires_at)}</div>`;
+      const cls = d <= 7 ? 'badge-exp-soon' : (d <= 30 ? 'badge-exp-mid' : 'badge-exp-ok');
+      return `<span class="badge ${cls}">còn ${d} ngày</span><div class="exp-sub">${fmtDateOnly(u.expires_at)}</div>`;
+    }
+
+    function getStatus(u) {
+      if (u.approved) return isExpired(u) ? 'expired' : 'approved';
+      if (u.status === 'rejected') return 'rejected';
+      if (u.status === 'revoked') return 'revoked';
+      return 'pending';
+    }
+    function badgeHtml(status) {
+      const m = {
+        approved: '<span class="badge badge-approved">✅ Đã duyệt</span>',
+        expired: '<span class="badge badge-expired">⛔ Hết hạn</span>',
+        rejected: '<span class="badge badge-rejected">❌ Từ chối</span>',
+        revoked: '<span class="badge badge-revoked">🔒 Thu hồi</span>',
+        pending: '<span class="badge badge-pending">⏳ Chờ duyệt</span>'
+      };
+      return m[status] || m.pending;
+    }
+    function roleBadge(role, email) {
+      if (email === SUPER_ADMIN) return '<span class="badge badge-super">🛡️ Super Admin</span>';
+      if (role === 'admin') return '<span class="badge badge-admin">👑 Admin</span>';
+      return '<span class="badge badge-member">👤 Member</span>';
+    }
+    function providerHtml(p) {
+      return p === 'google' ? '<span class="provider-badge">🔵 Google</span>' : '<span class="provider-badge">✉️ Email</span>';
+    }
+
+    // ── Log helper ────────────────────────────────────────────────
+    async function addLog(action, targetEmail, detail) {
+      await sb.from('activity_logs').insert({
+        admin_email: currentUser.email,
+        action, target_email: targetEmail, detail
+      });
+    }
+
+    // ── Navigation ────────────────────────────────────────────────
+    window.setPage = function (page) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.getElementById('page-' + page).classList.add('active');
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.page === page));
+      if (page === 'dashboard') renderDashboard();
+      if (page === 'logs') { loadLogs(); loadTruyCap(); }
+      if (page === 'pay') loadPayments();
+    };
+
+    // ── Auth gate ─────────────────────────────────────────────────
+    async function init() {
+      // Bỏ qua đăng nhập, vào thẳng giao diện Admin
+      currentUser = { email: 'admin@local.test', id: 'local-admin' };
+      showAdmin(currentUser);
+    }
+    function showGate(err) {
+      document.getElementById('login-gate').style.display = 'flex';
+      document.getElementById('admin-ui').style.display = 'none';
+      if (err) { const el = document.getElementById('gate-error'); el.textContent = String(err); el.style.display = 'block'; }
+    }
+    function showAdmin(user) {
+      document.getElementById('login-gate').style.display = 'none';
+      document.getElementById('admin-ui').style.display = 'block';
+      document.getElementById('admin-email-display').textContent = user.email;
+      loadUsers();
+    }
+    let _adminAttempts = 0;
+    let _adminLockUntil = 0;
+
+    window.adminLogin = async function () {
+      const errEl = document.getElementById('gate-error');
+      if (Date.now() < _adminLockUntil) {
+        const secs = Math.ceil((_adminLockUntil - Date.now()) / 1000);
+        errEl.textContent = 'Quá nhiều lần thử. Đợi ' + secs + ' giây.'; errEl.style.display = 'block';
+        return;
+      }
+      const email = document.getElementById('gate-email').value.trim();
+      const pass = document.getElementById('gate-pass').value;
+      errEl.style.display = 'none';
+      showLoading(true);
+      const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+      if (error) {
+        showLoading(false);
+        _adminAttempts++;
+        if (_adminAttempts >= 5) { _adminLockUntil = Date.now() + 60000; _adminAttempts = 0; }
+        errEl.textContent = 'Email hoặc mật khẩu không đúng.'; errEl.style.display = 'block';
+        return;
+      }
+      _adminAttempts = 0;
+      const { data: profile } = await sb.from('profiles').select('role').eq('id', data.user.id).single();
+      showLoading(false);
+      if (profile?.role === 'admin') { currentUser = data.user; showAdmin(data.user); }
+      else { await sb.auth.signOut(); errEl.textContent = 'Tài khoản này không có quyền Admin.'; errEl.style.display = 'block'; }
+    };
+    window.doLogout = async function () {
+      await sb.auth.signOut(); currentUser = null;
+      document.getElementById('login-gate').style.display = 'flex';
+      document.getElementById('admin-ui').style.display = 'none';
+    };
+
+    // ── Load users ─────────────────────────────────────────────────
+    window.loadUsers = async function () {
+      showLoading(true);
+      const { data, error } = await sb.from('profiles').select('*').order('created_at', { ascending: false });
+      if (error) { toast('Lỗi: ' + error.message, 'error'); showLoading(false); return; }
+      allUsers = data || [];
+      currentPage = 1;
+      updateStats(); renderTable();
+      showLoading(false);
+    };
+
+    function updateStats() {
+      document.getElementById('stat-total').textContent = allUsers.length;
+      document.getElementById('stat-pending').textContent = allUsers.filter(u => getStatus(u) === 'pending').length;
+      document.getElementById('stat-approved').textContent = allUsers.filter(u => getStatus(u) === 'approved').length;
+      document.getElementById('stat-expired').textContent = allUsers.filter(u => getStatus(u) === 'expired').length;
+      document.getElementById('stat-rejected').textContent = allUsers.filter(u => ['rejected', 'revoked'].includes(getStatus(u))).length;
+    }
+
+    window.setFilter = function (f) {
+      currentFilter = f; currentPage = 1;
+      ['all', 'pending', 'approved', 'expired', 'rejected'].forEach(k => {
+        const el = document.getElementById('filter-' + k);
+        if (el) el.className = 'filter-btn' + (k === f ? ' active' : '');
+      });
+      renderTable();
+    };
+
+    function getFilteredList() {
+      const search = document.getElementById('search-input').value.toLowerCase();
+      const sort = document.getElementById('sort-select').value;
+      let list = allUsers.filter(u => {
+        const status = getStatus(u);
+        if (currentFilter === 'rejected' && status !== 'rejected' && status !== 'revoked') return false;
+        else if (currentFilter !== 'all' && currentFilter !== 'rejected' && status !== currentFilter) return false;
+        if (search) return (u.name || '').toLowerCase().includes(search) || (u.email || '').toLowerCase().includes(search);
+        return true;
+      });
+      list.sort((a, b) => {
+        if (sort === 'newest') return new Date(b.created_at) - new Date(a.created_at);
+        if (sort === 'oldest') return new Date(a.created_at) - new Date(b.created_at);
+        if (sort === 'name-az') return (a.name || '').localeCompare(b.name || '');
+        if (sort === 'name-za') return (b.name || '').localeCompare(a.name || '');
+        return 0;
+      });
+      return list;
+    }
+
+    window.renderTable = function () {
+      const list = getFilteredList();
+      const totalPages = Math.max(1, Math.ceil(list.length / PER_PAGE));
+      if (currentPage > totalPages) currentPage = totalPages;
+      const start = (currentPage - 1) * PER_PAGE;
+      const pageList = list.slice(start, start + PER_PAGE);
+
+      const tbody = document.getElementById('users-table');
+      if (!pageList.length) {
+        tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state">📭 Không có tài khoản nào</div></td></tr>`;
+        document.getElementById('pagination').innerHTML = '';
+        return;
+      }
+
+      tbody.innerHTML = pageList.map(u => {
+        const status = getStatus(u);
+        const isAdmin = u.role === 'admin';
+        const editable = canModify(u.email);
+        let actions = '';
+
+        const eid = esc(u.id);
+        const eemail = esc(u.email);
+
+        if (!editable) {
+          actions = `<span style="color:#94a3b8;font-size:11px">${isSelf(u.email) ? 'Bạn' : '🛡️'}</span>`;
+        } else if (status === 'pending') {
+          actions = `<button class="btn-approve" onclick="approveUser('${eid}','${eemail}',event)">✅ Duyệt</button>
+                 <button class="btn-reject" onclick="rejectUser('${eid}','${eemail}',event)">❌ Từ chối</button>`;
+        } else if (status === 'approved') {
+          if (isAdmin) {
+            actions = `<button class="btn-remove-admin" onclick="setRole('${eid}','${eemail}','member',event)">👤 Gỡ Admin</button>`;
+          } else {
+            actions = `<button class="btn-set-admin" onclick="setRole('${eid}','${eemail}','admin',event)">👑 Set Admin</button>`;
+          }
+          actions += ` <button class="btn-extend" onclick="extendUser('${eid}','${eemail}',event)">⏰ Gia hạn</button>`;
+          actions += ` <button class="btn-revoke" onclick="revokeUser('${eid}','${eemail}',event)">🔒 Thu hồi</button>`;
+        } else if (status === 'expired') {
+          actions = `<button class="btn-extend" onclick="extendUser('${eid}','${eemail}',event)">⏰ Gia hạn</button>`;
+          actions += ` <button class="btn-revoke" onclick="revokeUser('${eid}','${eemail}',event)">🔒 Thu hồi</button>`;
+        } else {
+          actions = `<button class="btn-approve" onclick="approveUser('${eid}','${eemail}',event)">✅ Duyệt lại</button>`;
+          if (editable) actions += ` <button class="btn-delete" onclick="deleteUser('${eid}','${eemail}',event)">🗑️</button>`;
+        }
+
+        // Chọn được khi: đã duyệt / hết hạn (để đặt hạn hàng loạt) hoặc từ chối / thu hồi (để xoá)
+        const canSelect = editable && ['approved', 'expired', 'rejected', 'revoked'].includes(status);
+        const cbHtml = canSelect ? `<input type="checkbox" class="select-cb row-cb" data-id="${eid}" data-email="${eemail}" data-status="${status}" onchange="updateBulkBar()">` : '';
+        const notePreview = u.admin_note ? `<span title="${esc(u.admin_note)}" style="cursor:help">📝</span>` : '<span style="color:#cbd5e1">—</span>';
+
+        return `<tr onclick="showDetail('${eid}')" style="cursor:pointer">
+      <td onclick="event.stopPropagation()">${cbHtml}</td>
+      <td><div class="user-info"><div class="avatar">${esc(initials(u.name, u.email))}</div><div><div class="user-name">${esc(u.name || '—')}</div><div class="user-email">${eemail}</div></div></div></td>
+      <td>${roleBadge(u.role, u.email)}</td>
+      <td>${providerHtml(u.provider)}</td>
+      <td style="font-size:12px;color:#64748b">${fmtDate(u.created_at)}</td>
+      <td>${badgeHtml(status)}</td>
+      <td>${expiryHtml(u)}</td>
+      <td style="text-align:center">${notePreview}</td>
+      <td onclick="event.stopPropagation()"><div class="actions">${actions}</div></td>
+    </tr>`;
+      }).join('');
+
+      // Pagination
+      let pgHtml = `<button class="page-btn" onclick="goPage(${currentPage - 1})" ${currentPage <= 1 ? 'disabled' : ''}>← Trước</button>`;
+      pgHtml += `<span class="page-info">${start + 1}–${Math.min(start + PER_PAGE, list.length)} / ${list.length}</span>`;
+      for (let i = 1; i <= totalPages; i++) {
+        if (totalPages <= 7 || Math.abs(i - currentPage) <= 2 || i === 1 || i === totalPages) {
+          pgHtml += `<button class="page-btn${i === currentPage ? ' active' : ''}" onclick="goPage(${i})">${i}</button>`;
+        } else if (i === currentPage - 3 || i === currentPage + 3) {
+          pgHtml += `<span class="page-info">...</span>`;
+        }
+      }
+      pgHtml += `<button class="page-btn" onclick="goPage(${currentPage + 1})" ${currentPage >= totalPages ? 'disabled' : ''}>Sau →</button>`;
+      document.getElementById('pagination').innerHTML = pgHtml;
+    };
+
+    window.goPage = function (p) { currentPage = p; renderTable(); };
+
+    // ── Hộp chọn thời hạn ──────────────────────────────────────────
+    // Trả về { expires_at, label } hoặc null nếu Sếp bấm Huỷ.
+    // m = số tháng. Hai giá trị đặc biệt: 0 = vĩnh viễn, -7 = gói dùng thử 7 ngày.
+    const DURATIONS = [
+      { m: -7, t: '🎁 Dùng thử', sub: '7 ngày' },
+      { m: 1, t: '1 tháng', sub: '30 ngày' },
+      { m: 3, t: '3 tháng', sub: '90 ngày' },
+      { m: 6, t: '6 tháng', sub: '180 ngày' },
+      { m: 12, t: '12 tháng', sub: '360 ngày' },
+      { m: 0, t: '♾️ Vĩnh viễn', sub: 'không hết hạn' }
+    ];
+
+    function addDays(date, n) {
+      const d = new Date(date.getTime());
+      d.setDate(d.getDate() + n);
+      return d;
+    }
+
+    function addMonths(date, m) {
+      const d = new Date(date.getTime());
+      const day = d.getDate();
+      d.setMonth(d.getMonth() + m);
+      // Tránh lỗi tràn tháng: 31/01 + 1 tháng phải ra 28/02, không phải 03/03
+      if (d.getDate() < day) d.setDate(0);
+      return d;
+    }
+
+    // Còn hạn trong tương lai thì mốc cộng dồn là chính ngày hết hạn đó; hết hạn rồi thì tính từ hôm nay
+    function stillValid(cur) { return !!(cur && new Date(cur).getTime() > Date.now()); }
+
+    // Tính ngày hết hạn mới cho MỘT tài khoản, dựa trên lựa chọn + hạn hiện tại của chính nó
+    function computeExpiry(pick, cur) {
+      if (pick.mode === 'forever') return null;
+      if (pick.mode === 'custom') return pick.expires_at;
+      const base = (pick.mode === 'add' && stillValid(cur)) ? new Date(cur) : new Date();
+      return (pick.days ? addDays(base, pick.days) : addMonths(base, pick.months)).toISOString();
+    }
+
+    // cfg = { curExpires: <ISO|null>, bulk: <bool> }
+    function pickDuration(title, sub, defaultMonths, cfg) {
+      cfg = cfg || {};
+      return new Promise(function (resolve) {
+        let chosen = defaultMonths == null ? 1 : defaultMonths;
+        let customDate = '';
+        // 'add' = cộng thêm vào hạn cũ | 'reset' = tính lại từ hôm nay
+        let mode = 'add';
+        const canAdd = cfg.bulk || stillValid(cfg.curExpires);
+        const host = document.getElementById('dur-modal');
+
+        function preview() {
+          if (chosen === -1) return customDate ? `Hết hạn: <b>${fmtDateOnly(customDate)}</b>` : 'Chọn ngày hết hạn';
+          if (chosen === 0) return 'Tài khoản dùng <b>không giới hạn thời gian</b>';
+          const thu = chosen === -7;
+          const nhan = thu ? '7 ngày dùng thử' : chosen + ' tháng';
+          if (cfg.bulk && mode === 'add') {
+            return `Mỗi tài khoản được <b>cộng thêm ${nhan}</b> vào hạn hiện tại của chính nó.`
+              + `<br><small style="color:#94a3b8">Tài khoản đã hết hạn sẽ tính từ hôm nay.</small>`;
+          }
+          const useAdd = (mode === 'add' && stillValid(cfg.curExpires));
+          const base = useAdd ? new Date(cfg.curExpires) : new Date();
+          const d = thu ? addDays(base, 7) : addMonths(base, chosen);
+          const left = Math.ceil((d - Date.now()) / 86400000);
+          return (useAdd ? `Hạn cũ <b>${fmtDateOnly(cfg.curExpires)}</b> + ${nhan} → ` : `Từ hôm nay + ${nhan} → `)
+            + `<b>${fmtDateOnly(d.toISOString())}</b> (còn ${left} ngày)`;
+        }
+        function draw() {
+          host.querySelector('#dur-preview').innerHTML = preview();
+          host.querySelectorAll('.dur-opt').forEach(function (b) {
+            b.classList.toggle('sel', Number(b.dataset.m) === chosen);
+          });
+          const mr = host.querySelector('#dur-mode-row');
+          if (mr) {
+            mr.style.display = (chosen > 0 || chosen === -7) ? 'grid' : 'none';
+            mr.querySelectorAll('.dur-opt').forEach(function (b) { b.classList.toggle('sel', b.dataset.mode === mode); });
+          }
+          host.querySelector('#dur-ok').disabled = (chosen === -1 && !customDate);
+        }
+
+        const modeRow = !canAdd ? '' : `
+      <div style="margin-top:14px;font-size:12px;font-weight:700;color:#374151">Cách tính</div>
+      <div class="dur-grid" id="dur-mode-row" style="grid-template-columns:1fr 1fr">
+        <button class="dur-opt sel" data-mode="add">➕ Cộng thêm<small>nối vào hạn cũ</small></button>
+        <button class="dur-opt" data-mode="reset">🔄 Tính lại<small>từ hôm nay</small></button>
+      </div>`;
+
+        host.innerHTML = `
+      <div class="modal">
+        <h3>${title}</h3>
+        <div style="font-size:13px;color:#64748b">${sub}</div>
+        <div style="margin-top:14px;font-size:12px;font-weight:700;color:#374151">Thời hạn</div>
+        <div class="dur-grid">
+          ${DURATIONS.map(function (d) {
+          return `<button class="dur-opt" data-m="${d.m}">${d.t}<small>${d.sub}</small></button>`;
+        }).join('')}
+          <button class="dur-opt" data-m="-1">📅 Tuỳ chọn<small>chọn ngày</small></button>
+        </div>
+        ${modeRow}
+        <div class="dur-custom" id="dur-custom-wrap" style="display:none">
+          <span>Hết hạn ngày:</span>
+          <input type="date" id="dur-date">
+        </div>
+        <div style="margin-top:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px 12px;font-size:13px;color:#334155" id="dur-preview"></div>
+        <div class="modal-actions">
+          <button class="btn-close-modal" id="dur-cancel">Huỷ</button>
+          <button class="btn-approve" id="dur-ok">Xác nhận</button>
+        </div>
+      </div>`;
+        host.classList.add('show');
+
+        host.querySelectorAll('.dur-grid .dur-opt[data-m]').forEach(function (b) {
+          b.onclick = function () {
+            chosen = Number(b.dataset.m);
+            host.querySelector('#dur-custom-wrap').style.display = chosen === -1 ? 'flex' : 'none';
+            draw();
+          };
+        });
+        host.querySelectorAll('.dur-opt[data-mode]').forEach(function (b) {
+          b.onclick = function () { mode = b.dataset.mode; draw(); };
+        });
+        host.querySelector('#dur-date').onchange = function (ev) { customDate = ev.target.value; draw(); };
+
+        function close(val) { host.classList.remove('show'); host.innerHTML = ''; resolve(val); }
+        host.querySelector('#dur-cancel').onclick = function () { close(null); };
+        host.querySelector('#dur-ok').onclick = function () {
+          if (chosen === 0) return close({ mode: 'forever', months: 0, expires_at: null, label: 'Vĩnh viễn' });
+          if (chosen === -1) {
+            if (!customDate) return;
+            const d = new Date(customDate + 'T23:59:59');   // hết hạn cuối ngày được chọn
+            return close({ mode: 'custom', months: 0, expires_at: d.toISOString(), label: 'Đến ' + fmtDateOnly(d.toISOString()) });
+          }
+          const thu = chosen === -7;
+          const nhan = thu ? '7 ngày dùng thử' : chosen + ' tháng';
+          const useAdd = (mode === 'add' && canAdd);
+          const pick = { mode: useAdd ? 'add' : 'reset', months: thu ? 0 : chosen, days: thu ? 7 : 0, expires_at: null, label: '' };
+          if (cfg.bulk) {
+            pick.label = (useAdd ? 'Cộng thêm ' : 'Tính lại ') + nhan;
+          } else {
+            const d = new Date(computeExpiry(pick, cfg.curExpires));
+            pick.label = (useAdd ? '+' : '') + nhan + ' (đến ' + fmtDateOnly(d.toISOString()) + ')';
+          }
+          close(pick);
+        };
+        draw();
+      });
+    }
+
+    // ── Actions ────────────────────────────────────────────────────
+    window.approveUser = async function (id, email, e) {
+      if (e) e.stopPropagation();
+      const pick = await pickDuration('✅ Duyệt tài khoản', `Tài khoản: <b>${esc(email)}</b>`, -7);
+      if (!pick) return;
+      const newExp = computeExpiry(pick, null);   // duyệt lần đầu: luôn tính từ hôm nay
+      showLoading(true);
+      const { error } = await sb.from('profiles').update({
+        approved: true, status: 'approved',
+        approved_at: new Date().toISOString(),
+        expires_at: newExp
+      }).eq('id', id);
+      showLoading(false);
+      if (error) { toast('Lỗi: ' + error.message, 'error'); return; }
+      const u = allUsers.find(x => x.id === id);
+      if (u) { u.approved = true; u.status = 'approved'; u.expires_at = newExp; u.approved_at = new Date().toISOString(); }
+      await addLog('Duyệt tài khoản', email, 'Thời hạn: ' + pick.label);
+      updateStats(); renderTable(); closeModal();
+      toast(`✅ Đã duyệt ${email} — ${pick.label}`);
+    };
+
+    // Gia hạn / đổi hạn cho tài khoản đã duyệt hoặc đã hết hạn
+    window.extendUser = async function (id, email, e) {
+      if (e) e.stopPropagation();
+      const u = allUsers.find(x => x.id === id);
+      const cur = !u ? '' : (u.expires_at
+        ? (isExpired(u) ? `Đang <b style="color:#dc2626">hết hạn</b> từ ${fmtDateOnly(u.expires_at)}` : `Hạn hiện tại: <b>${fmtDateOnly(u.expires_at)}</b> (còn ${daysLeft(u)} ngày)`)
+        : 'Hiện đang <b>vĩnh viễn</b>');
+      const pick = await pickDuration('⏰ Gia hạn tài khoản', `<b>${esc(email)}</b><br>${cur}`, 1, { curExpires: u ? u.expires_at : null });
+      if (!pick) return;
+      const newExp = computeExpiry(pick, u ? u.expires_at : null);
+      showLoading(true);
+      // Gia hạn cũng bật lại quyền nếu tài khoản đang hết hạn
+      const { error } = await sb.from('profiles').update({
+        approved: true, status: 'approved', expires_at: newExp
+      }).eq('id', id);
+      showLoading(false);
+      if (error) { toast('Lỗi: ' + error.message, 'error'); return; }
+      if (u) { u.approved = true; u.status = 'approved'; u.expires_at = newExp; }
+      await addLog('Gia hạn tài khoản', email, 'Thời hạn mới: ' + pick.label);
+      updateStats(); renderTable(); closeModal();
+      toast(`⏰ Đã gia hạn ${email} — ${pick.label}`);
+    };
+
+    window.rejectUser = async function (id, email, e) {
+      if (e) e.stopPropagation();
+      if (!confirm(`Từ chối tài khoản ${email}?`)) return;
+      showLoading(true);
+      const { error } = await sb.from('profiles').update({ approved: false, status: 'rejected', rejected_at: new Date().toISOString() }).eq('id', id);
+      showLoading(false);
+      if (error) { toast('Lỗi: ' + error.message, 'error'); return; }
+      const u = allUsers.find(x => x.id === id);
+      if (u) { u.approved = false; u.status = 'rejected'; }
+      await addLog('Từ chối tài khoản', email, '');
+      updateStats(); renderTable(); closeModal();
+      toast(`Đã từ chối ${email}`, 'error');
+    };
+
+    window.revokeUser = async function (id, email, e) {
+      if (e) e.stopPropagation();
+      if (!canModify(email)) { toast('Không thể thu hồi.', 'error'); return; }
+      const u = allUsers.find(x => x.id === id);
+      const msg = `Thu hồi quyền ${u?.role === 'admin' ? 'Admin + ' : ''}Member của ${email}?\nNgười này sẽ bị đăng xuất ngay.`;
+      if (!confirm(msg)) return;
+      showLoading(true);
+      const { error } = await sb.from('profiles').update({ approved: false, status: 'revoked', role: 'member' }).eq('id', id);
+      showLoading(false);
+      if (error) { toast('Lỗi: ' + error.message, 'error'); return; }
+      if (u) { u.approved = false; u.status = 'revoked'; u.role = 'member'; }
+      await addLog('Thu hồi quyền', email, u?.role === 'admin' ? 'Gỡ Admin + Thu hồi' : 'Thu hồi Member');
+      updateStats(); renderTable(); closeModal();
+      toast(`🔒 Đã thu hồi ${email}`, 'error');
+    };
+
+    window.deleteUser = async function (id, email, e) {
+      if (e) e.stopPropagation();
+      if (!canModify(email)) { toast('Không thể xóa.', 'error'); return; }
+      if (!confirm(`Xóa ${email}?\nKhông thể hoàn tác!`)) return;
+      showLoading(true);
+      const { error } = await sb.from('profiles').delete().eq('id', id);
+      showLoading(false);
+      if (error) { toast('Lỗi: ' + error.message, 'error'); return; }
+      allUsers = allUsers.filter(x => x.id !== id);
+      await addLog('Xóa tài khoản', email, '');
+      updateStats(); renderTable(); closeModal(); updateBulkBar();
+      toast(`🗑️ Đã xóa ${email}`);
+    };
+
+    // Đặt / đổi hạn dùng cho nhiều tài khoản cùng lúc
+    window.bulkSetExpiry = async function () {
+      const items = Array.from(document.querySelectorAll('.row-cb:checked'))
+        .filter(cb => cb.dataset.status === 'approved' || cb.dataset.status === 'expired')
+        .map(cb => ({ id: cb.dataset.id, email: cb.dataset.email }));
+      if (!items.length) { toast('Chưa chọn tài khoản đã duyệt nào.', 'error'); return; }
+
+      const dsach = items.slice(0, 5).map(i => '• ' + esc(i.email)).join('<br>')
+        + (items.length > 5 ? `<br><i>… và ${items.length - 5} tài khoản khác</i>` : '');
+      const pick = await pickDuration('⏰ Gia hạn hàng loạt', `Áp dụng cho <b>${items.length} tài khoản</b>:<br>${dsach}`, 1, { bulk: true });
+      if (!pick) return;
+
+      showLoading(true);
+      let ok = 0, fail = 0;
+      for (const it of items) {
+        const u = allUsers.find(x => x.id === it.id);
+        // Cộng dồn tính trên hạn riêng của từng tài khoản
+        const newExp = computeExpiry(pick, u ? u.expires_at : null);
+        const { error } = await sb.from('profiles').update({
+          approved: true, status: 'approved', expires_at: newExp
+        }).eq('id', it.id);
+        if (error) { fail++; continue; }
+        ok++;
+        if (u) { u.approved = true; u.status = 'approved'; u.expires_at = newExp; }
+      }
+      await addLog('Đặt hạn hàng loạt', items.map(i => i.email).join(', '), `${ok} tài khoản — ${pick.label}`);
+      showLoading(false);
+      updateStats(); renderTable(); updateBulkBar();
+      if (fail) toast(`⏰ Đã đặt hạn ${ok} tài khoản, ${fail} lỗi`, 'error');
+      else toast(`⏰ Đã đặt hạn ${ok} tài khoản — ${pick.label}`);
+    };
+
+    window.bulkDelete = async function () {
+      const cbs = Array.from(document.querySelectorAll('.row-cb:checked'))
+        .filter(cb => cb.dataset.status === 'rejected' || cb.dataset.status === 'revoked');
+      if (!cbs.length) { toast('Chỉ xoá được tài khoản Từ chối / Thu hồi.', 'error'); return; }
+      const items = cbs.map(cb => ({ id: cb.dataset.id, email: cb.dataset.email }));
+      if (!confirm(`Xóa ${items.length} tài khoản?\nKhông thể hoàn tác!`)) return;
+      showLoading(true);
+      let n = 0;
+      for (const it of items) {
+        const { error } = await sb.from('profiles').delete().eq('id', it.id);
+        if (!error) { allUsers = allUsers.filter(x => x.id !== it.id); n++; }
+      }
+      await addLog('Xóa hàng loạt', items.map(i => i.email).join(', '), `${n} tài khoản`);
+      showLoading(false);
+      updateStats(); renderTable(); updateBulkBar();
+      toast(`🗑️ Đã xóa ${n} tài khoản`);
+    };
+
+    window.toggleSelectAll = function (el) {
+      document.querySelectorAll('.row-cb').forEach(cb => { cb.checked = el.checked; });
+      updateBulkBar();
+    };
+    window.updateBulkBar = function () {
+      const checked = Array.from(document.querySelectorAll('.row-cb:checked'));
+      const nExp = checked.filter(cb => cb.dataset.status === 'approved' || cb.dataset.status === 'expired').length;
+      const nDel = checked.filter(cb => cb.dataset.status === 'rejected' || cb.dataset.status === 'revoked').length;
+      document.getElementById('bulk-count').textContent = checked.length;
+      document.getElementById('bulk-bar').classList.toggle('show', checked.length > 0);
+      // Chỉ hiện nút phù hợp với những dòng đang chọn
+      const bExp = document.getElementById('bulk-btn-expiry');
+      const bDel = document.getElementById('bulk-btn-delete');
+      bExp.style.display = nExp ? '' : 'none';
+      bExp.textContent = `⏰ Đặt hạn ${nExp} tài khoản`;
+      bDel.style.display = nDel ? '' : 'none';
+      bDel.textContent = `🗑️ Xóa ${nDel} tài khoản`;
+    };
+
+    // ── Set Role ──────────────────────────────────────────────────
+    window.setRole = async function (id, email, role, e) {
+      if (e) e.stopPropagation();
+      if (!canModify(email)) return;
+      const label = role === 'admin' ? 'Admin' : 'Member';
+      if (!confirm(`Đổi ${email} thành ${label}?`)) return;
+      showLoading(true);
+      const { error } = await sb.from('profiles').update({ role }).eq('id', id);
+      showLoading(false);
+      if (error) { toast('Lỗi: ' + error.message, 'error'); return; }
+      const u = allUsers.find(x => x.id === id);
+      if (u) u.role = role;
+      await addLog(role === 'admin' ? 'Set Admin' : 'Gỡ Admin', email, '');
+      updateStats(); renderTable(); closeModal();
+      toast(`${role === 'admin' ? '👑' : '👤'} Đã đổi ${email} thành ${label}`);
+    };
+
+    // ── Save note ─────────────────────────────────────────────────
+    window.saveNote = async function (id) {
+      const note = document.getElementById('note-input-' + id)?.value || '';
+      const { error } = await sb.from('profiles').update({ admin_note: note }).eq('id', id);
+      if (error) { toast('Lỗi: ' + error.message, 'error'); return; }
+      const u = allUsers.find(x => x.id === id);
+      if (u) u.admin_note = note;
+      renderTable();
+      toast('📝 Đã lưu ghi chú');
+    };
+
+    // ── Detail Modal ───────────────────────────────────────────────
+    window.showDetail = function (id) {
+      const u = allUsers.find(x => x.id === id);
+      if (!u) return;
+      const status = getStatus(u);
+      const isAdmin = u.role === 'admin';
+      const editable = canModify(u.email);
+
+      const eid = esc(u.id);
+      const eemail = esc(u.email);
+
+      document.getElementById('modal-content').innerHTML = `
+    <div class="detail-row"><div class="detail-label">Họ tên</div><div class="detail-value">${esc(u.name || '—')}</div></div>
+    <div class="detail-row"><div class="detail-label">Email</div><div class="detail-value">${eemail}</div></div>
+    <div class="detail-row"><div class="detail-label">Vai trò</div><div class="detail-value">${roleBadge(u.role, u.email)}</div></div>
+    <div class="detail-row"><div class="detail-label">Đăng ký qua</div><div class="detail-value">${providerHtml(u.provider)}</div></div>
+    <div class="detail-row"><div class="detail-label">Ngày đăng ký</div><div class="detail-value">${fmtDate(u.created_at)}</div></div>
+    <div class="detail-row"><div class="detail-label">Trạng thái</div><div class="detail-value">${badgeHtml(status)}</div></div>
+    ${(status === 'approved' || status === 'expired') ? `<div class="detail-row"><div class="detail-label">Hạn dùng</div><div class="detail-value">${!u.expires_at ? '<span class="badge badge-forever">♾️ Vĩnh viễn</span>'
+            : (isExpired(u) ? `<span class="badge badge-expired">⛔ Hết hạn</span> từ ${fmtDate(u.expires_at)}`
+              : `<b>${fmtDate(u.expires_at)}</b> — còn <b>${daysLeft(u)}</b> ngày`)
+          }</div></div>` : ''}
+    ${u.approved_at ? `<div class="detail-row"><div class="detail-label">Duyệt lúc</div><div class="detail-value">${fmtDate(u.approved_at)}</div></div>` : ''}
+    ${u.rejected_at ? `<div class="detail-row"><div class="detail-label">Từ chối lúc</div><div class="detail-value">${fmtDate(u.rejected_at)}</div></div>` : ''}
+    <div class="detail-row"><div class="detail-label">ID</div><div class="detail-value" style="font-size:10px;font-family:monospace;color:#94a3b8">${eid}</div></div>
+  `;
+
+      document.getElementById('modal-note').innerHTML = `
+    <div style="margin-top:12px;font-size:13px;font-weight:600;color:#374151">📝 Ghi chú Admin</div>
+    <textarea class="note-area" id="note-input-${eid}" placeholder="Ghi chú nội bộ (VD: KH VIP, test account...)">${esc(u.admin_note || '')}</textarea>
+    <button class="btn-save-note" onclick="saveNote('${eid}')">💾 Lưu ghi chú</button>
+  `;
+
+      let btns = `<button class="btn-close-modal" onclick="closeModal()">Đóng</button>`;
+      if (!editable) {
+        // no actions
+      } else if (status === 'pending') {
+        btns += `<button class="btn-approve" onclick="approveUser('${eid}','${eemail}')">✅ Duyệt</button>
+             <button class="btn-reject" onclick="rejectUser('${eid}','${eemail}')">❌ Từ chối</button>`;
+      } else if (status === 'approved') {
+        btns += isAdmin
+          ? `<button class="btn-remove-admin" onclick="setRole('${eid}','${eemail}','member')">👤 Gỡ Admin</button>`
+          : `<button class="btn-set-admin" onclick="setRole('${eid}','${eemail}','admin')">👑 Set Admin</button>`;
+        btns += `<button class="btn-extend" onclick="extendUser('${eid}','${eemail}')">⏰ Gia hạn</button>`;
+        btns += `<button class="btn-revoke" onclick="revokeUser('${eid}','${eemail}')">🔒 Thu hồi</button>`;
+      } else if (status === 'expired') {
+        btns += `<button class="btn-extend" onclick="extendUser('${eid}','${eemail}')">⏰ Gia hạn</button>`;
+        btns += `<button class="btn-revoke" onclick="revokeUser('${eid}','${eemail}')">🔒 Thu hồi</button>`;
+      } else {
+        btns += `<button class="btn-approve" onclick="approveUser('${eid}','${eemail}')">✅ Duyệt lại</button>`;
+        if (editable) btns += `<button class="btn-delete" onclick="deleteUser('${eid}','${eemail}')">🗑️ Xóa</button>`;
+      }
+      document.getElementById('modal-actions').innerHTML = btns;
+      document.getElementById('modal').classList.add('show');
+    };
+    window.closeModal = function () { document.getElementById('modal').classList.remove('show'); };
+
+    // ── Export Excel ──────────────────────────────────────────────
+    window.exportExcel = function () {
+      const list = getFilteredList();
+      const header = ['Họ tên', 'Email', 'Vai trò', 'Đăng ký qua', 'Ngày đăng ký', 'Trạng thái', 'Hạn dùng', 'Còn lại (ngày)', 'Ghi chú'];
+      const rows = list.map(u => {
+        const st = getStatus(u);
+        const hasExp = (st === 'approved' || st === 'expired');
+        return [
+          u.name || '', u.email, u.role || 'member', u.provider || 'email',
+          u.created_at ? new Date(u.created_at).toLocaleString('vi-VN') : '',
+          st,
+          !hasExp ? '' : (u.expires_at ? new Date(u.expires_at).toLocaleDateString('vi-VN') : 'Vĩnh viễn'),
+          (!hasExp || !u.expires_at) ? '' : daysLeft(u),
+          u.admin_note || ''
+        ];
+      });
+      let csv = '﻿'; // BOM for Excel
+      csv += header.join(',') + '\n';
+      rows.forEach(r => {
+        csv += r.map(c => { let s = (c + '').replace(/"/g, '""'); if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; return '"' + s + '"'; }).join(',') + '\n';
+      });
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `ktool_users_${new Date().toISOString().slice(0, 10)}.csv`;
+      link.click();
+      toast('📥 Đã xuất file CSV');
+    };
+
+    // ── Thanh toán ────────────────────────────────────────────────
+    const PAY_LABEL = {
+      applied: ['✅ Đã gia hạn', '#16a34a'],
+      short: ['⚠️ Chuyển thiếu', '#dc2626'],
+      no_match: ['❓ Không rõ mã', '#b45309'],
+      used_code: ['⚠️ Mã đã dùng', '#b45309'],
+      expired_code: ['⚠️ Mã hết hiệu lực', '#b45309'],
+      forever: ['♾️ TK vĩnh viễn', '#6d28d9'],
+    };
+    const payMoney = n => Number(n || 0).toLocaleString('vi-VN') + 'đ';
+
+    window.loadPayments = async function () {
+      const { data, error } = await sb.from('payments')
+        .select('*').order('created_at', { ascending: false }).limit(500);
+
+      const box = document.getElementById('pay-list');
+      const man = document.getElementById('pay-manual');
+      if (error) {
+        box.innerHTML = '<div class="empty-state">Lỗi tải dữ liệu: ' + esc(error.message)
+          + '<br><small>Đã chạy file supabase_thanh_toan.sql chưa?</small></div>';
+        man.innerHTML = '';
+        return;
+      }
+      const rows = data || [];
+
+      // Chỉ tính tiền của giao dịch đã cộng hạn thành công
+      const okRows = rows.filter(r => r.result === 'applied');
+      const now = new Date(), m0 = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+      const revMonth = okRows.filter(r => new Date(r.created_at).getTime() >= m0)
+        .reduce((a, r) => a + Number(r.amount || 0), 0);
+      const revAll = okRows.reduce((a, r) => a + Number(r.amount || 0), 0);
+      // Tài khoản ngân hàng này còn nhận tiền dịch vụ vận hành sàn. Chỉ coi là giao
+      // dịch của tool khi có mã HDT (SePay bóc sẵn vào cột code, hoặc nằm trong nội
+      // dung chuyển khoản). Không có mã = tiền việc khác, đừng bắt Sếp "xử lý tay".
+      const laCuaTool = r => {
+        if (r.result === 'applied') return true;
+        if (r.code) return true;
+        return String(r.content || '').toUpperCase().replace(/\s+/g, '').includes('HDT');
+      };
+      const rowsTool = rows.filter(laCuaTool);
+      const rowsKhac = rows.filter(r => !laCuaTool(r));
+      const manRows = rowsTool.filter(r => r.result !== 'applied');
+
+      document.getElementById('pay-rev-month').textContent = payMoney(revMonth);
+      document.getElementById('pay-rev-all').textContent = payMoney(revAll);
+      document.getElementById('pay-ok-count').textContent = okRows.length.toLocaleString('vi-VN');
+      document.getElementById('pay-manual-count').textContent = manRows.length.toLocaleString('vi-VN');
+
+      man.innerHTML = manRows.length ? payTable(manRows) :
+        '<div class="empty-state" style="color:#16a34a">✅ Không có khoản nào cần xử lý</div>';
+      box.innerHTML = rowsTool.length ? payTable(rowsTool.slice(0, 200)) :
+        '<div class="empty-state">Chưa có giao dịch nào của tool</div>';
+
+      const dem = document.getElementById('pay-khac-count');
+      if (dem) dem.textContent = rowsKhac.length.toLocaleString('vi-VN');
+      const oKhac = document.getElementById('pay-khac');
+      if (oKhac) oKhac.innerHTML = rowsKhac.length ? payTable(rowsKhac.slice(0, 200)) :
+        '<div class="empty-state">Không có</div>';
+    };
+
+    // Xuất danh sách để kế toán phát hành hoá đơn — chỉ lấy giao dịch đã thu tiền
+    window.exportInvoices = async function () {
+      const { data, error } = await sb.from('payments')
+        .select('*').eq('result', 'applied').order('created_at', { ascending: false });
+      if (error) { toast('Lỗi tải dữ liệu: ' + error.message); return; }
+      const rows = (data || []);
+      if (!rows.length) { toast('Chưa có giao dịch nào đã thu tiền'); return; }
+
+      const header = ['Ngày thanh toán', 'Loại', 'Tên đơn vị', 'Mã số thuế', 'Họ tên', 'Số CCCD',
+        'Số điện thoại', 'Địa chỉ', 'Email nhận hoá đơn', 'Gói', 'Số tiền',
+        'Mã thanh toán', 'Email tài khoản'];
+      let csv = '\uFEFF' + header.join(',') + '\n';
+      for (const r of rows) {
+        const cells = [
+          new Date(r.created_at).toLocaleString('vi-VN'),
+          r.buyer_type === 'doanh_nghiep' ? 'Doanh nghiệp' : 'Cá nhân',
+          r.buyer_company || '', r.buyer_tax_id || '',
+          r.buyer_name || '', r.buyer_id_no || '',
+          r.buyer_phone || '', r.buyer_address || '', r.buyer_email || '',
+          (r.months_added ? r.months_added + ' tháng' : ''),
+          Number(r.amount || 0), r.code || '', r.email || ''
+        ];
+        csv += cells.map(c => {
+          let v = (c + '').replace(/"/g, '""');
+          if (/^[=+\-@\t\r]/.test(v)) v = "'" + v;   // chặn công thức lạ khi mở bằng Excel
+          return '"' + v + '"';
+        }).join(',') + '\n';
+      }
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `hoa_don_ktool_${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      toast(`🧾 Đã xuất ${rows.length} dòng hoá đơn`);
+    };
+
+    // Doanh nghiệp thì hoá đơn xuất theo tên đơn vị + MST, cá nhân thì theo tên riêng
+    function payBuyer(r) {
+      const dn = r.buyer_type === 'doanh_nghiep';
+      const ten = dn ? r.buyer_company : r.buyer_name;
+      if (!ten && !r.buyer_phone) return '<span style="color:#cbd5e1">—</span>';
+      const phu = [];
+      if (dn && r.buyer_tax_id) phu.push('MST ' + esc(r.buyer_tax_id));
+      if (!dn && r.buyer_id_no) phu.push('CCCD ' + esc(r.buyer_id_no));
+      if (r.buyer_phone) phu.push(esc(r.buyer_phone));
+      if (dn && r.buyer_name) phu.push('LH: ' + esc(r.buyer_name));
+      return '<span style="display:inline-block;font-size:10px;font-weight:700;padding:1px 6px;border-radius:20px;'
+        + (dn ? 'background:#ede9fe;color:#6d28d9">🏢 DN' : 'background:#e0f2fe;color:#0369a1">👤 CN') + '</span> '
+        + '<b>' + esc(ten || '') + '</b>'
+        + '<div style="font-size:11.5px;color:#64748b;white-space:normal;max-width:280px;line-height:1.55">'
+        + phu.join(' · ')
+        + (r.buyer_address ? '<br>' + esc(r.buyer_address) : '')
+        + (r.buyer_email ? '<br>' + esc(r.buyer_email) : '')
+        + '</div>';
+    }
+
+    // Độ trễ = lúc tool ghi nhận (created_at) − lúc ngân hàng báo khách chuyển (tx_date).
+    // Cột "Thời gian" là lúc TOOL nhận được tin, không phải lúc khách bấm chuyển —
+    // khoảng chênh này chính là thời gian ngân hàng + SePay giữ tin trước khi báo sang.
+    function payTre(r) {
+      if (!r.tx_date || !r.created_at) return '';
+      var giay = Math.round((new Date(r.created_at) - new Date(r.tx_date)) / 1000);
+      if (!isFinite(giay)) return '';
+      var gioCk = new Date(r.tx_date).toLocaleTimeString('vi-VN');
+      var chu = giay < 0 ? 'lệch giờ ' + Math.abs(giay) + 's'
+        : giay < 90 ? 'trễ ' + giay + 's'
+          : 'trễ ' + Math.floor(giay / 60) + ' phút ' + (giay % 60) + 's';
+      var mau = giay <= 30 ? '#16a34a' : (giay <= 120 ? '#b45309' : '#dc2626');
+      return '<div style="font-size:11px;margin-top:2px;color:#94a3b8">Khách CK ' + gioCk
+        + ' · <b style="color:' + mau + '">' + chu + '</b></div>';
+    }
+
+    function payTable(rows) {
+      const th = 'text-align:left;padding:9px 10px;font-size:11px;font-weight:700;color:#64748b;'
+        + 'text-transform:uppercase;border-bottom:2px solid #e2e8f0;white-space:nowrap';
+      let h = '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">'
+        + '<thead><tr>'
+        + '<th style="' + th + '">Thời gian</th>'
+        + '<th style="' + th + '">Email</th>'
+        + '<th style="' + th + '">Mã</th>'
+        + '<th style="' + th + 'text-align:right">Nhận</th>'
+        + '<th style="' + th + 'text-align:right">Cần</th>'
+        + '<th style="' + th + '">Kết quả</th>'
+        + '<th style="' + th + '">Hạn mới</th>'
+        + '<th style="' + th + '">Người mua</th>'
+        + '</tr></thead><tbody>';
+
+      for (const r of rows) {
+        const lb = PAY_LABEL[r.result] || [r.result || '—', '#64748b'];
+        const thieu = Number(r.expected_amount || 0) - Number(r.amount || 0);
+        const td = 'padding:9px 10px;border-bottom:1px solid #f1f5f9;white-space:nowrap';
+        h += '<tr>'
+          + '<td style="' + td + ';color:#64748b;font-size:12px">' + new Date(r.created_at).toLocaleString('vi-VN') + payTre(r) + '</td>'
+          + '<td style="' + td + '">' + esc(r.email || '—') + '</td>'
+          + '<td style="' + td + ';font-family:ui-monospace,monospace;font-size:12px">' + esc(r.code || '—') + '</td>'
+          + '<td style="' + td + ';text-align:right;font-weight:700">' + payMoney(r.amount) + '</td>'
+          + '<td style="' + td + ';text-align:right;color:#64748b">' + (r.expected_amount ? payMoney(r.expected_amount) : '—') + '</td>'
+          + '<td style="' + td + ';color:' + lb[1] + ';font-weight:700">' + lb[0]
+          + (r.result === 'short' ? ' <span style="font-weight:600">(thiếu ' + payMoney(thieu) + ')</span>' : '')
+          + (r.months_added ? ' <span style="color:#64748b;font-weight:600">+' + r.months_added + ' tháng</span>' : '')
+          + '</td>'
+          + '<td style="' + td + ';color:#334155">' + (r.new_expires_at ? new Date(r.new_expires_at).toLocaleDateString('vi-VN') : '—') + '</td>'
+          + '<td style="' + td + '">' + payBuyer(r) + '</td>'
+          + '</tr>';
+      }
+      return h + '</tbody></table></div>';
+    }
+
+    // ── Dashboard Charts ──────────────────────────────────────────
+    function renderDashboard() {
+      const total = allUsers.length;
+      const approved = allUsers.filter(u => u.approved).length;
+      const admins = allUsers.filter(u => u.role === 'admin').length;
+      const week = allUsers.filter(u => new Date(u.created_at) > new Date(Date.now() - 7 * 86400000)).length;
+
+      document.getElementById('dash-total').textContent = total;
+      document.getElementById('dash-rate').textContent = total ? Math.round(approved / total * 100) + '%' : '—';
+      document.getElementById('dash-admins').textContent = admins;
+      document.getElementById('dash-recent').textContent = week;
+
+      // Daily registrations (30 days)
+      const days = {};
+      for (let i = 29; i >= 0; i--) {
+        const d = new Date(Date.now() - i * 86400000);
+        days[d.toISOString().slice(0, 10)] = 0;
+      }
+      allUsers.forEach(u => {
+        const d = u.created_at?.slice(0, 10);
+        if (d && days[d] !== undefined) days[d]++;
+      });
+      const labels = Object.keys(days).map(d => d.slice(5));
+      const values = Object.values(days);
+
+      if (charts.daily) charts.daily.destroy();
+      charts.daily = new Chart(document.getElementById('chart-daily'), {
+        type: 'bar', data: { labels, datasets: [{ label: 'Đăng ký', data: values, backgroundColor: '#2563eb', borderRadius: 4 }] },
+        options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+      });
+
+      // Status pie
+      const statusCounts = { pending: 0, approved: 0, rejected: 0, revoked: 0 };
+      allUsers.forEach(u => { const s = getStatus(u); statusCounts[s] = (statusCounts[s] || 0) + 1; });
+      if (charts.status) charts.status.destroy();
+      charts.status = new Chart(document.getElementById('chart-status'), {
+        type: 'doughnut',
+        data: { labels: ['Chờ duyệt', 'Đã duyệt', 'Từ chối', 'Thu hồi'], datasets: [{ data: [statusCounts.pending, statusCounts.approved, statusCounts.rejected, statusCounts.revoked], backgroundColor: ['#d97706', '#16a34a', '#dc2626', '#64748b'] }] },
+        options: { responsive: true }
+      });
+
+      // Provider pie
+      const providers = { email: 0, google: 0 };
+      allUsers.forEach(u => { providers[u.provider === 'google' ? 'google' : 'email']++; });
+      if (charts.provider) charts.provider.destroy();
+      charts.provider = new Chart(document.getElementById('chart-provider'), {
+        type: 'doughnut',
+        data: { labels: ['Email', 'Google'], datasets: [{ data: [providers.email, providers.google], backgroundColor: ['#2563eb', '#ea4335'] }] },
+        options: { responsive: true }
+      });
+
+      // Role pie
+      const roles = { admin: 0, member: 0 };
+      allUsers.forEach(u => { roles[u.role === 'admin' ? 'admin' : 'member']++; });
+      if (charts.role) charts.role.destroy();
+      charts.role = new Chart(document.getElementById('chart-role'), {
+        type: 'doughnut',
+        data: { labels: ['Admin', 'Member'], datasets: [{ data: [roles.admin, roles.member], backgroundColor: ['#d97706', '#64748b'] }] },
+        options: { responsive: true }
+      });
+    }
+
+    // ── Thống kê truy cập ─────────────────────────────────────────
+    // Dữ liệu do hàm ghi_truy_cap() trong Supabase ghi lại: mỗi người mỗi ngày
+    // một dòng, mở lại nhiều lần chỉ tăng cột so_lan.
+    window.loadTruyCap = async function () {
+      const el = document.getElementById('tc-list');
+      const tt = document.getElementById('tc-tomtat');
+      if (!el) return;
+      const soNgay = parseInt((document.getElementById('tc-range') || {}).value || '30', 10);
+      const tuNgay = new Date(Date.now() + 7 * 3600000 - (soNgay - 1) * 86400000)
+        .toISOString().slice(0, 10);
+
+      const { data, error } = await sb.from('truy_cap')
+        .select('ngay,email,so_lan,lan_cuoi')
+        .gte('ngay', tuNgay)
+        .order('ngay', { ascending: false });
+
+      if (error) {
+        tt.innerHTML = '';
+        el.innerHTML = '<div class="empty-state">⚠️ Chưa bật tính năng này.<br>'
+          + '<span style="font-size:13px">Vào Supabase → SQL Editor, chạy file <b>supabase_truy_cap.sql</b> rồi bấm 🔄.</span></div>';
+        return;
+      }
+      if (!data || !data.length) {
+        tt.innerHTML = '';
+        el.innerHTML = '<div class="empty-state">📭 Chưa có lượt truy cập nào được ghi nhận.<br>'
+          + '<span style="font-size:13px">Tính năng chỉ đếm từ lúc bật trở đi, không có dữ liệu cũ.</span></div>';
+        return;
+      }
+
+      // Gom theo ngày
+      const theoNgay = {};
+      data.forEach(r => {
+        (theoNgay[r.ngay] = theoNgay[r.ngay] || []).push(r);
+      });
+      const ngays = Object.keys(theoNgay).sort().reverse();
+
+      const homNay = new Date(Date.now() + 7 * 3600000).toISOString().slice(0, 10);
+      const nguoiDuyNhat = new Set(data.map(r => r.email || ''));
+      const soHomNay = (theoNgay[homNay] || []).length;
+      const tbNgay = (data.length / ngays.length);
+      tt.innerHTML = 'Hôm nay <b style="color:#2563eb">' + soHomNay + '</b> người · '
+        + 'Trung bình <b>' + tbNgay.toFixed(1) + '</b> người/ngày · '
+        + 'Tổng <b>' + nguoiDuyNhat.size + '</b> người khác nhau trong ' + ngays.length + ' ngày có hoạt động';
+
+      const THU = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
+      const caoNhat = Math.max.apply(null, ngays.map(n => theoNgay[n].length)) || 1;
+
+      el.innerHTML = ngays.map((n, i) => {
+        const ds = theoNgay[n].slice().sort((a, b) => (b.so_lan || 0) - (a.so_lan || 0));
+        const d = new Date(n + 'T00:00:00');
+        const nhan = THU[d.getDay()] + ', ' + n.slice(8, 10) + '/' + n.slice(5, 7) + '/' + n.slice(0, 4);
+        const luot = ds.reduce((s, x) => s + (x.so_lan || 1), 0);
+        const rong = Math.round(ds.length / caoNhat * 100);
+        const mo = i === 0 ? ' open' : '';
+        return '<details class="tc-ngay"' + mo + '>'
+          + '<summary>'
+          + '<span class="tc-nhan">' + nhan + (n === homNay ? ' <b style="color:#2563eb">(hôm nay)</b>' : '') + '</span>'
+          + '<span class="tc-thanh"><i style="width:' + rong + '%"></i></span>'
+          + '<span class="tc-so"><b>' + ds.length + '</b> người · ' + luot + ' lượt mở</span>'
+          + '</summary>'
+          + '<div class="tc-mail">'
+          + ds.map(x => '<span class="tc-chip" title="Lần cuối: ' + fmtDate(x.lan_cuoi) + '">'
+            + esc(x.email || '(không rõ)')
+            + (x.so_lan > 1 ? '<i>×' + x.so_lan + '</i>' : '') + '</span>').join('')
+          + '</div>'
+          + '</details>';
+      }).join('');
+    };
+
+    // ── Activity Logs ─────────────────────────────────────────────
+    window.loadLogs = async function () {
+      showLoading(true);
+      const { data, error } = await sb.from('activity_logs').select('*').order('created_at', { ascending: false }).limit(200);
+      showLoading(false);
+      if (error) { toast('Lỗi: ' + error.message, 'error'); return; }
+      allLogs = data || [];
+      renderLogs();
+    };
+
+    const LOG_ICONS = {
+      'Duyệt tài khoản': '✅', 'Từ chối tài khoản': '❌', 'Thu hồi quyền': '🔒',
+      'Xóa tài khoản': '🗑️', 'Xóa hàng loạt': '🗑️', 'Set Admin': '👑', 'Gỡ Admin': '👤'
+    };
+
+    window.renderLogs = function () {
+      const search = document.getElementById('log-search').value.toLowerCase();
+      const list = allLogs.filter(l => {
+        if (!search) return true;
+        return l.admin_email.toLowerCase().includes(search) || l.target_email.toLowerCase().includes(search) || l.action.toLowerCase().includes(search);
+      });
+
+      const el = document.getElementById('log-list');
+      if (!list.length) { el.innerHTML = '<div class="empty-state">📭 Chưa có hoạt động nào</div>'; return; }
+
+      el.innerHTML = list.map(l => `
+    <div class="log-item">
+      <div class="log-icon">${LOG_ICONS[l.action] || '📌'}</div>
+      <div class="log-content">
+        <div><span class="log-admin">${esc(l.admin_email)}</span> <span class="log-action">${esc(l.action)}</span> → <span class="log-target">${esc(l.target_email)}</span></div>
+        ${l.detail ? `<div class="log-detail">${esc(l.detail)}</div>` : ''}
+        <div class="log-time">${fmtDate(l.created_at)}</div>
+      </div>
+    </div>
+  `).join('');
+    };
+
+    init();
+  </script>
+</body>
+
+</html>
