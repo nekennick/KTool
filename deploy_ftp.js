@@ -4,39 +4,60 @@ const fs = require('fs');
 
 async function deploy() {
   const client = new ftp.Client();
-  client.ftp.verbose = true; // In toàn bộ nhật ký FTP chi tiết
+  client.ftp.verbose = false;
+
+  const logs = [];
+  function log(...args) {
+    const msg = args.join(' ');
+    console.log(msg);
+    logs.push(msg);
+  }
 
   try {
-    console.log('Connecting to FTP server:', process.env.FTP_SERVER);
+    log('=== KTOOL FTP DEPLOY RUN ===');
+    log('Timestamp:', new Date().toISOString());
+    log('Connecting to:', process.env.FTP_SERVER, 'as user:', process.env.FTP_USERNAME);
+
     await client.access({
       host: process.env.FTP_SERVER,
       user: process.env.FTP_USERNAME,
       password: process.env.FTP_PASSWORD,
       port: 21,
-      secure: 'loose' // Cho phép FTPS cPanel
+      secure: 'loose'
     });
 
-    console.log('✅ Connected successfully!');
+    log('✅ FTP Connected successfully!');
     const pwd = await client.pwd();
-    console.log('📍 Current working directory on server:', pwd);
+    log('📍 PWD (Current Directory):', pwd);
 
-    console.log('📋 Listing files in current directory:');
-    const list = await client.list();
-    list.forEach(f => console.log('  -', f.name, '(' + f.size + ' bytes)', f.modifiedAt));
+    log('\n📋 Files before upload:');
+    const listBefore = await client.list();
+    listBefore.forEach(f => log(`  - [${f.isDirectory ? 'DIR' : 'FILE'}] ${f.name} (${f.size} bytes) - Mod: ${f.rawModifiedAt || f.modifiedAt}`));
+
+    // Nếu thư mục hiện tại có public_html, cd vào public_html/ktool
+    const hasPublicHtml = listBefore.some(f => f.name === 'public_html');
+    if (hasPublicHtml) {
+      log('ℹ️ Found public_html in current directory, navigating to public_html/ktool...');
+      await client.ensureDir('public_html/ktool');
+      log('📍 New PWD:', await client.pwd());
+    }
 
     const localDir = path.join(__dirname, 'ktool');
-    console.log('🚀 Uploading all files from local:', localDir, 'to server:', pwd);
+    log('\n🚀 Uploading files from:', localDir);
     await client.uploadFromDir(localDir);
 
-    console.log('🎉 Upload finished! Listing files again:');
+    log('\n🎉 Upload finished! Files after upload:');
     const listAfter = await client.list();
-    listAfter.forEach(f => console.log('  -', f.name, '(' + f.size + ' bytes)', f.modifiedAt));
+    listAfter.forEach(f => log(`  - [${f.isDirectory ? 'DIR' : 'FILE'}] ${f.name} (${f.size} bytes) - Mod: ${f.rawModifiedAt || f.modifiedAt}`));
 
+    log('\n=== DEPLOY COMPLETED SUCCESSFULLY ===');
   } catch (err) {
-    console.error('❌ FTP Error:', err);
-    process.exit(1);
+    log('❌ DEPLOY ERROR:', err.message, err.stack);
+    process.exitCode = 1;
   } finally {
     client.close();
+    // Ghi toàn bộ nhật ký vào file deploy_result.md để theo dõi
+    fs.writeFileSync(path.join(__dirname, 'deploy_result.md'), '# FTP Deploy Log\n\n```\n' + logs.join('\n') + '\n```\n');
   }
 }
 

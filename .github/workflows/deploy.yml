@@ -6,6 +6,9 @@ on:
       - main
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   web-deploy:
     name: 🚀 Deploy KTool via FTPS
@@ -28,3 +31,12 @@ jobs:
           FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
           FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
         run: node deploy_ftp.js
+
+      - name: 📝 Commit Deploy Log
+        if: always()
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add deploy_result.md || true
+          git commit -m "docs: auto-save deploy log [skip ci]" || true
+          git push || true
