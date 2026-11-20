@@ -11170,8 +11170,14 @@ function clearShopeeRevenue() {
 function switchSpRvTab(id) {
   document.querySelectorAll('#spRevDashboard .rv-tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('#spRevDashboard .rv-page').forEach(p => p.classList.remove('active'));
-  document.getElementById('spRvTab-' + id).classList.add('active');
-  document.getElementById('spRvPage-' + id).classList.add('active');
+  var tabBtn = document.getElementById('spRvTab-' + id);
+  if (tabBtn) tabBtn.classList.add('active');
+  var pageDiv = document.getElementById('spRvPage-' + id);
+  if (pageDiv) pageDiv.classList.add('active');
+  if (id === 'giavon') {
+    var isVariantActive = document.getElementById('spCogsViewTab-variant') && document.getElementById('spCogsViewTab-variant').classList.contains('active');
+    calcSpCOGS(isVariantActive ? 'variant' : 'name', true);
+  }
 }
 
 // Shopee COGS
@@ -11180,9 +11186,13 @@ let spCogsProductsByVariant = [];
 
 function switchSpCogsView(view) {
   document.querySelectorAll('[id^="spCogsViewTab-"]').forEach(t => t.classList.remove('active'));
-  document.getElementById('spCogsViewTab-' + view).classList.add('active');
-  document.getElementById('spCogsView-name').style.display = view === 'name' ? '' : 'none';
-  document.getElementById('spCogsView-variant').style.display = view === 'variant' ? '' : 'none';
+  var tabEl = document.getElementById('spCogsViewTab-' + view);
+  if (tabEl) tabEl.classList.add('active');
+  var nameEl = document.getElementById('spCogsView-name');
+  if (nameEl) nameEl.style.display = view === 'name' ? '' : 'none';
+  var varEl = document.getElementById('spCogsView-variant');
+  if (varEl) varEl.style.display = view === 'variant' ? '' : 'none';
+  calcSpCOGS(view, true);
 }
 
 function buildSpCOGSTable(orderRows) {
@@ -11225,7 +11235,8 @@ function buildSpCOGSTable(orderRows) {
   setTimeout(function() { fillSpCogsFromMemory(); }, 50);
 }
 
-function calcSpCOGS(view) {
+function calcSpCOGS(view, updateGrandTotal) {
+  if (updateGrandTotal === undefined) updateGrandTotal = true;
   const isName = view === 'name';
   const products = isName ? spCogsProductsByName : spCogsProductsByVariant;
   const inputClass = isName ? '.sp-cogs-input-name' : '.sp-cogs-input-variant';
@@ -11235,17 +11246,24 @@ function calcSpCOGS(view) {
   document.querySelectorAll(inputClass).forEach(input => {
     const idx = parseInt(input.dataset.idx);
     const price = parseFloat(String(input.value).replace(/[.\s]/g, '')) || 0;
-    const qty = products[idx] ? products[idx].qty : 0;
+    const qty = (products && products[idx]) ? products[idx].qty : 0;
     const rowTotal = price * qty;
-    products[idx].price = price;
-    var cogsKey = isName ? products[idx].name : (products[idx].name + '|||' + (products[idx].variation || ''));
+    if (products && products[idx]) products[idx].price = price;
+    var cogsKey = isName ? (products && products[idx] ? products[idx].name : '') : (products && products[idx] ? (products[idx].name + '|||' + (products[idx].variation || '')) : '');
     if (cogsKey && price > 0) { saveSpCogsToDb(cogsKey, price); }
-    document.getElementById(totalPrefix + idx).textContent = fmt(rowTotal) + 'đ';
+    var cell = document.getElementById(totalPrefix + idx);
+    if (cell) cell.textContent = fmt(rowTotal) + 'đ';
     grandTotal += rowTotal;
   });
-  document.getElementById('spCogsGrandTotal').textContent = fmt(grandTotal) + 'đ';
-  document.getElementById('spRvInputCogs').value = fmt(grandTotal);
-  recalcShopeeRevenue();
+
+  if (updateGrandTotal) {
+    var grandEl = document.getElementById('spCogsGrandTotal');
+    if (grandEl) grandEl.textContent = fmt(grandTotal) + 'đ';
+    var cogsInput = document.getElementById('spRvInputCogs');
+    if (cogsInput) cogsInput.value = fmt(grandTotal);
+    recalcShopeeRevenue();
+  }
+  return grandTotal;
 }
 
 // Shopee Ops
@@ -12344,9 +12362,13 @@ let cogsActiveView = 'name';
 function switchCogsView(view) {
   cogsActiveView = view;
   document.querySelectorAll('[id^="cogsViewTab-"]').forEach(t => t.classList.remove('active'));
-  document.getElementById('cogsViewTab-' + view).classList.add('active');
-  document.getElementById('cogsView-name').style.display = view === 'name' ? '' : 'none';
-  document.getElementById('cogsView-variant').style.display = view === 'variant' ? '' : 'none';
+  var tabEl = document.getElementById('cogsViewTab-' + view);
+  if (tabEl) tabEl.classList.add('active');
+  var nameEl = document.getElementById('cogsView-name');
+  if (nameEl) nameEl.style.display = view === 'name' ? '' : 'none';
+  var varEl = document.getElementById('cogsView-variant');
+  if (varEl) varEl.style.display = view === 'variant' ? '' : 'none';
+  calcCOGS(view, true);
 }
 
 function buildCOGSTable(orderRows, incomeRows) {
@@ -12460,7 +12482,8 @@ function buildCOGSTable(orderRows, incomeRows) {
   }
 }
 
-function calcCOGS(view) {
+function calcCOGS(view, updateGrandTotal) {
+  if (updateGrandTotal === undefined) updateGrandTotal = true;
   const isName = view === 'name';
   const products = isName ? cogsProductsByName : cogsProductsByVariant;
   const inputClass = isName ? '.cogs-input-name' : '.cogs-input-variant';
@@ -12470,16 +12493,22 @@ function calcCOGS(view) {
   document.querySelectorAll(inputClass).forEach(input => {
     const idx = parseInt(input.dataset.idx);
     const price = parseFloat(String(input.value).replace(/[.\s]/g, '')) || 0;
-    const qty = products[idx] ? products[idx].qty : 0;
+    const qty = (products && products[idx]) ? products[idx].qty : 0;
     const rowTotal = price * qty;
-    products[idx].price = price;
-    document.getElementById(totalPrefix + idx).textContent = fmt(rowTotal) + 'đ';
+    if (products && products[idx]) products[idx].price = price;
+    var cell = document.getElementById(totalPrefix + idx);
+    if (cell) cell.textContent = fmt(rowTotal) + 'đ';
     grandTotal += rowTotal;
   });
 
-  document.getElementById('cogsGrandTotal').textContent = fmt(grandTotal) + 'đ';
-  document.getElementById('rvInputCOGS').value = fmt(grandTotal);
-  recalcRevenue();
+  if (updateGrandTotal) {
+    var grandEl = document.getElementById('cogsGrandTotal');
+    if (grandEl) grandEl.textContent = fmt(grandTotal) + 'đ';
+    var rvInput = document.getElementById('rvInputCOGS');
+    if (rvInput) rvInput.value = fmt(grandTotal);
+    recalcRevenue();
+  }
+  return grandTotal;
 }
 
 function clearCOGSRows() { /* kept for compatibility */ }
@@ -15575,9 +15604,13 @@ async function fillSpCogsFromMemory() {
     }
   });
 
-  // Tự động tính lại tổng giá vốn theo view hiện tại
+  // Tự động tính và cập nhật cột "Tổng giá vốn" cho cả hai bảng name và variant
+  calcSpCOGS('name', false);
+  calcSpCOGS('variant', false);
+
+  // Cập nhật tổng giá vốn chung theo view đang active
   var isVariantActive = document.getElementById('spCogsViewTab-variant') && document.getElementById('spCogsViewTab-variant').classList.contains('active');
-  calcSpCOGS(isVariantActive ? 'variant' : 'name');
+  calcSpCOGS(isVariantActive ? 'variant' : 'name', true);
 }
 
 // Lắng nghe sự kiện thay đổi % CPQC để tính ROI realtime
