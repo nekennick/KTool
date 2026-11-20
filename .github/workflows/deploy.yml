@@ -1,0 +1,27 @@
+name: Deploy KTool to Vietnix Hosting
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch: # Cho phép bấm nút chạy thủ công từ giao diện GitHub khi cần
+
+jobs:
+  web-deploy:
+    name: 🚀 Sync files to Vietnix via FTP
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🚚 Checkout latest code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: 📂 Sync ktool files to public_html/ktool/
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./ktool/
+          server-dir: public_html/ktool/
+          dangerous-clean-slate: false
