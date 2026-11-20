@@ -15163,6 +15163,106 @@ async function saveSpCogsToDb(key, price) {
   });
 }
 
+
+// ==========================================
+// PRESET GIÁ VỐN SHOP MUỐI SẤY NGỌC YẾN
+// ==========================================
+const DEFAULT_SHOPEE_COGS = {
+  "Muối Sấy Ngọc Yến Date Siêu Mới|||100g (10 gói)": 56000,
+  "Muối Sấy Ngọc Yến combo 20 gói loại 100g": 112000,
+  "Muối Sấy Ngọc Yến combo 20 gói loại 100g|||": 112000,
+  "Muối Sấy Ngọc Yến combo 20 gói loại 100g|||--": 112000,
+  "Muối Sấy Ngọc Yến combo 5 gói 100g": 28000,
+  "Muối Sấy Ngọc Yến combo 5 gói 100g|||": 28000,
+  "Muối Sấy Ngọc Yến combo 5 gói 100g|||--": 28000,
+  "Muối ớt Ngọc Yến hạt to keo 200g muối tỏi ớt thơm ngon": 23000,
+  "Muối ớt Ngọc Yến hạt to keo 200g muối tỏi ớt thơm ngon|||": 23000,
+  "Muối ớt Ngọc Yến hạt to keo 200g muối tỏi ớt thơm ngon|||--": 23000,
+  "Muối Ngọc Yến 250g Date mới": 13500,
+  "Muối Ngọc Yến 250g Date mới|||": 13500,
+  "Muối Ngọc Yến 250g Date mới|||--": 13500,
+  "Muối Sấy Ngọc Yến Date Siêu Mới|||20g (10 gói)": 17000,
+  "MUỐI SẤY NGỌC YẾN 250g 4 GÓI THƠM NGON": 54000,
+  "MUỐI SẤY NGỌC YẾN 250g 4 GÓI THƠM NGON|||": 54000,
+  "MUỐI SẤY NGỌC YẾN 250g 4 GÓI THƠM NGON|||--": 54000,
+  "Muối sấy Ngọc Yến keo 150g, 300g bảo quản lâu hơn|||300g": 25000,
+  "Muối sấy ngọc yến combo 10 gói 20g": 17000,
+  "Muối sấy ngọc yến combo 10 gói 20g|||": 17000,
+  "Muối sấy ngọc yến combo 10 gói 20g|||--": 17000,
+  "[Combo 2 gói] Muối Chấm Hoa Quả Ngọc Yến 20g chấm trái cây Gia Vị ướp": 3400,
+  "[Combo 2 gói] Muối Chấm Hoa Quả Ngọc Yến 20g chấm trái cây Gia Vị ướp|||": 3400,
+  "[Combo 2 gói] Muối Chấm Hoa Quả Ngọc Yến 20g chấm trái cây Gia Vị ướp|||--": 3400,
+  "Muối Sấy Ngọc Yến Date Siêu Mới|||250g (4 gói)": 54000,
+  "Muối sấy Ngọc Yến keo 150g, 300g bảo quản lâu hơn|||Keo 150g x3": 42000,
+  "Muối Sấy Ngọc Yến Date Siêu Mới|||Keo 300g": 25000,
+  "Muối sấy Ngọc Yến Combo 5kg chấm hoa quả": 280000,
+  "Muối sấy Ngọc Yến Combo 5kg chấm hoa quả|||": 280000,
+  "Muối sấy Ngọc Yến Combo 5kg chấm hoa quả|||--": 280000,
+  "Nước chấm Tứ Vị Đỏ chấm lẩu chấm hải sản cực ngon": 9000,
+  "Nước chấm Tứ Vị Đỏ chấm lẩu chấm hải sản cực ngon|||": 9000,
+  "Nước chấm Tứ Vị Đỏ chấm lẩu chấm hải sản cực ngon|||--": 9000,
+  "Muối Sấy Ngọc Yến Thùng 12.5kg|||100g (125gói)": 560000,
+  "Muối sấy ngọc yến chấm trái cây siêu ngon combo 25 gói loại 100g": 140000,
+  "Muối sấy ngọc yến chấm trái cây siêu ngon combo 25 gói loại 100g|||": 140000,
+  "Muối sấy ngọc yến chấm trái cây siêu ngon combo 25 gói loại 100g|||--": 140000,
+  "Muối sấy ngọc yến chấm trái cây siêu ngon|||Combo 30 gói 100g": 168000,
+  "Muối sấy ngọc yến 500g (2 gói 250g)": 27000,
+  "Muối sấy ngọc yến 500g (2 gói 250g)|||": 27000,
+  "Muối sấy ngọc yến 500g (2 gói 250g)|||--": 27000,
+  "Muối Sấy Ngọc Yến Date Siêu Mới|||Keo 150g": 14000,
+  "Muối sấy ngọc yến 250g gói vừa dùng cả tháng": 13500,
+  "Muối sấy ngọc yến 250g gói vừa dùng cả tháng|||": 13500,
+  "Muối sấy ngọc yến 250g gói vừa dùng cả tháng|||--": 13500,
+  "Muối Sấy Ngọc Yến Thùng 12.5kg|||20g (400gói)": 680000,
+  "Muối Sấy Ngọc Yến Date Siêu Mới|||Keo 200g hạt to": 23000,
+  "Muối Sấy Ngọc Yến Thùng 12.5kg|||250g (50gói)": 675000,
+  "Nước chấm hải sản lẩu thịt nướng Tứ Vị Đen": 9000,
+  "Nước chấm hải sản lẩu thịt nướng Tứ Vị Đen|||": 9000,
+  "Nước chấm hải sản lẩu thịt nướng Tứ Vị Đen|||--": 9000,
+  "Nước chấm hải sản lẩu thịt nướng thơm ngon Combo 3 loại Đỏ Xanh Đen": 9000,
+  "Nước chấm hải sản lẩu thịt nướng thơm ngon Combo 3 loại Đỏ Xanh Đen|||": 9000,
+  "Nước chấm hải sản lẩu thịt nướng thơm ngon Combo 3 loại Đỏ Xanh Đen|||--": 9000,
+  "Muối sấy ngọc yến 500g gói siêu to": 24000,
+  "Muối sấy ngọc yến 500g gói siêu to|||": 24000,
+  "Muối sấy ngọc yến 500g gói siêu to|||--": 24000,
+  "Muối sấy ngọc yến chấm trái cây siêu ngon|||Combo 10 gói 250g": 54000,
+  "Muối sấy ngọc yến chấm trái cây siêu ngon|||Combo 25 gói 100g": 140000,
+  "Muối Tiêu Đen Sấy Ngọc Yến|||60g": 7000,
+  "Muối Ngọc Yến gói 250g Sale Xã Hàng Giá Cực Sốc": 13500,
+  "Muối Ngọc Yến gói 250g Sale Xã Hàng Giá Cực Sốc|||": 13500,
+  "Muối Ngọc Yến gói 250g Sale Xã Hàng Giá Cực Sốc|||--": 13500
+};
+
+// Tra cứu giá vốn thông minh (hỗ trợ normalize Unicode, case-insensitive, fallback)
+function findSpCogsPrice(cogsMap, name, variant) {
+  if (!cogsMap) return null;
+  var n = String(name || '').trim().normalize('NFC');
+  var v = String(variant || '').trim().normalize('NFC');
+  var vKey = n + '|||' + v;
+  if (cogsMap[vKey] != null) return cogsMap[vKey];
+  if (!v || v === '--') {
+    if (cogsMap[n] != null) return cogsMap[n];
+    if (cogsMap[n + '|||'] != null) return cogsMap[n + '|||'];
+    if (cogsMap[n + '|||--'] != null) return cogsMap[n + '|||--'];
+  }
+  if (cogsMap[n] != null) return cogsMap[n];
+
+  var nLower = n.toLowerCase();
+  var vLower = v.toLowerCase();
+  for (var k in cogsMap) {
+    var parts = k.split('|||');
+    var p0 = parts[0].trim().normalize('NFC').toLowerCase();
+    var p1 = parts[1] != null ? parts[1].trim().normalize('NFC').toLowerCase() : '';
+    if (p0 === nLower) {
+      if (vLower && (vLower === p1 || (p1 === '--' && (!vLower || vLower === '--')))) {
+        return cogsMap[k];
+      }
+      if (!vLower || vLower === '--') return cogsMap[k];
+    }
+  }
+  return null;
+}
+
 async function getAllSpCogsFromDb() {
   var db = await openSpDb();
   return new Promise(function(resolve, reject) {
@@ -15170,11 +15270,13 @@ async function getAllSpCogsFromDb() {
     var store = tx.objectStore('cogs');
     var req = store.getAll();
     req.onsuccess = function() {
-      var map = {};
+      var map = Object.assign({}, typeof DEFAULT_SHOPEE_COGS !== 'undefined' ? DEFAULT_SHOPEE_COGS : {});
       (req.result || []).forEach(function(it) { map[it.k] = it.price; });
       resolve(map);
     };
-    req.onerror = function(e) { reject(e.target.error); };
+    req.onerror = function(e) {
+      resolve(Object.assign({}, typeof DEFAULT_SHOPEE_COGS !== 'undefined' ? DEFAULT_SHOPEE_COGS : {}));
+    };
   });
 }
 
@@ -15450,8 +15552,12 @@ async function fillSpCogsFromMemory() {
   nameInputs.forEach(function(inp) {
     var idx = parseInt(inp.dataset.idx);
     var p = spCogsProductsByName[idx];
-    if (p && cogsMap[p.name] != null) {
-      inp.value = fmt(cogsMap[p.name]);
+    if (p) {
+      var price = findSpCogsPrice(cogsMap, p.name, '');
+      if (price != null) {
+        inp.value = fmt(price);
+        p.price = price;
+      }
     }
   });
 
@@ -15460,17 +15566,17 @@ async function fillSpCogsFromMemory() {
     var idx = parseInt(inp.dataset.idx);
     var p = spCogsProductsByVariant[idx];
     if (p) {
-      var vKey = p.name + '|||' + p.variation;
-      if (cogsMap[vKey] != null) {
-        inp.value = fmt(cogsMap[vKey]);
-      } else if (cogsMap[p.name] != null) {
-        inp.value = fmt(cogsMap[p.name]);
+      var price = findSpCogsPrice(cogsMap, p.name, p.variation);
+      if (price != null) {
+        inp.value = fmt(price);
+        p.price = price;
       }
     }
   });
 
-  // Tính lại tổng giá vốn
-  calcSpCOGS('name');
+  // Tự động tính lại tổng giá vốn theo view hiện tại
+  var isVariantActive = document.getElementById('spCogsViewTab-variant') && document.getElementById('spCogsViewTab-variant').classList.contains('active');
+  calcSpCOGS(isVariantActive ? 'variant' : 'name');
 }
 
 // Lắng nghe sự kiện thay đổi % CPQC để tính ROI realtime
