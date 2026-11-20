@@ -13,10 +13,8 @@ jobs:
     steps:
       - name: 🚚 Checkout latest code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 2
 
-      - name: 📂 Sync ktool files to Vietnix hosting
+      - name: 📂 Force sync all ktool files to Vietnix hosting
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_SERVER }}
@@ -27,4 +25,5 @@ jobs:
           security: loose
           local-dir: ./ktool/
           server-dir: ./
+          state-name: .sync-${{ github.sha }}.json
           dangerous-clean-slate: false
