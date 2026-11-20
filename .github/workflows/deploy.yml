@@ -16,7 +16,7 @@ jobs:
         with:
           fetch-depth: 2
 
-      - name: 📂 Sync ktool files to public_html/ktool/
+      - name: 📂 Sync ktool files to Vietnix hosting
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_SERVER }}
@@ -26,5 +26,5 @@ jobs:
           port: 21
           security: loose
           local-dir: ./ktool/
-          server-dir: public_html/ktool/
+          server-dir: ./
           dangerous-clean-slate: false
