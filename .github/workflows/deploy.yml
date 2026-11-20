@@ -4,26 +4,27 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch: # Cho phép bấm nút chạy thủ công từ giao diện GitHub khi cần
+  workflow_dispatch:
 
 jobs:
   web-deploy:
-    name: 🚀 Sync files to Vietnix via FTPS
+    name: 🚀 Deploy KTool via FTPS
     runs-on: ubuntu-latest
     steps:
-      - name: 🚚 Checkout latest code
+      - name: 🚚 Checkout code
         uses: actions/checkout@v4
 
-      - name: 📂 Force sync all ktool files to Vietnix hosting
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          protocol: ftps
-          port: 21
-          security: loose
-          local-dir: ./ktool/
-          server-dir: ./
-          state-name: .sync-${{ github.sha }}.json
-          dangerous-clean-slate: false
+          node-version: 20
+
+      - name: 📥 Install basic-ftp
+        run: npm install basic-ftp
+
+      - name: 🚀 Run FTP Deploy Script
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        run: node deploy_ftp.js
